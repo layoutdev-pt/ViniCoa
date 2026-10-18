@@ -2,17 +2,19 @@ import { useState, useMemo } from "react";
 import { Search, X } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useCart } from "../../lib/cart-context";
-import { WINES_DATABASE, formatMoney } from "../../lib/wines";
+import { useAdmin } from "../../lib/admin-context";
+import { formatMoney } from "../../lib/wines";
 
 export function SearchModal() {
   const { isSearchOpen, closeSearch, openQuickView } = useCart();
+  const { wines } = useAdmin();
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (q.length < 2) return [];
-    return WINES_DATABASE.filter(
+    return wines.filter(
       (w) =>
         w.title.toLowerCase().includes(q) ||
         w.grapes.toLowerCase().includes(q) ||
@@ -21,7 +23,7 @@ export function SearchModal() {
         w.range.toLowerCase().includes(q) ||
         w.year.includes(q)
     );
-  }, [query]);
+  }, [wines, query]);
 
   if (!isSearchOpen) return null;
 

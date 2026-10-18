@@ -1,20 +1,22 @@
 import { useParams, Link } from "react-router";
 import { ArrowLeft, Trophy, Utensils, ShoppingBag } from "lucide-react";
 import { useCart } from "../lib/cart-context";
+import { useAdmin } from "../lib/admin-context";
 import { getWineById, formatMoney } from "../lib/wines";
 import { WinePurchaseCTA } from "../components/ui/WinePurchaseCTA";
-import { MapAndContactSection } from "../components/ui/MapAndContactSection";
+import { GlobeSection } from "../components/ui/GlobeSection";
 
 export function WineDetail() {
   const { id } = useParams<{ id: string }>();
   const { addToCart } = useCart();
+  const { wines } = useAdmin();
 
-  const wine = getWineById(id || "1");
+  const wine = wines.find((w) => String(w.id) === id || w.slug === id) || getWineById(id || "1");
 
   if (!wine) {
     return (
       <div className="pt-40 sm:pt-44 pb-28 px-6 max-w-xl mx-auto text-center">
-        <h1 className="font-editorial text-3xl font-bold text-bege mb-4">
+        <h1 className="font-brand text-3xl font-bold text-bege mb-4">
           Vinho Não Encontrado
         </h1>
         <p className="text-xs text-bege-dark mb-6">
@@ -42,7 +44,7 @@ export function WineDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start mb-16">
         {/* Imagem e Selo */}
-        <div className="glass-luxury rounded-3xl p-10 flex items-center justify-center relative border border-dourado/30">
+        <div data-reveal="left" className="glass-luxury rounded-3xl p-10 flex items-center justify-center relative border border-dourado/30">
           <span className="absolute top-4 left-4 px-3.5 py-1 rounded-full bg-bordo text-bege text-xs uppercase font-bold tracking-widest border border-dourado/40">
             {wine.badge}
           </span>
@@ -54,11 +56,11 @@ export function WineDetail() {
         </div>
 
         {/* Dados Comerciais e Sensoriais */}
-        <div>
+        <div data-reveal="right" data-reveal-delay="1">
           <span className="text-xs uppercase tracking-[0.25em] text-dourado font-semibold block mb-1">
-            DOC Beira Interior — Sabugal
+            {wine.color} · {wine.range}
           </span>
-          <h1 className="font-editorial text-3xl sm:text-5xl font-bold text-bege mb-2">
+          <h1 className="font-brand text-3xl sm:text-5xl font-bold text-bege mb-2">
             {wine.title}
           </h1>
 
@@ -147,8 +149,8 @@ export function WineDetail() {
       {/* CTA DE INCENTIVO À COMPRA DE VINHOS */}
       <WinePurchaseCTA />
 
-      {/* SECÇÃO DE MAPA E CONTACTOS */}
-      <MapAndContactSection />
+      {/* DO SABUGAL PARA O MUNDO */}
+      <GlobeSection />
 
       {/* BARRA FIXA MOBILE PARA ADICIONAR AO CESTO */}
       <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 glass-luxury border-t border-dourado/30 p-4 flex items-center justify-between">

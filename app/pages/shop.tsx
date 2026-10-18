@@ -2,14 +2,18 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router";
 import { Filter, Sliders, Wine as WineIcon } from "lucide-react";
 import { useCart } from "../lib/cart-context";
-import { WINES_DATABASE, formatMoney } from "../lib/wines";
+import { useAdmin } from "../lib/admin-context";
+import { formatMoney } from "../lib/wines";
 import { WinePurchaseCTA } from "../components/ui/WinePurchaseCTA";
-import { MapAndContactSection } from "../components/ui/MapAndContactSection";
+import { GlobeSection } from "../components/ui/GlobeSection";
 
 export function Shop() {
   const { addToCart, openQuickView } = useCart();
+  const { wines } = useAdmin();
 
-  const maxPricePossible = Math.ceil(Math.max(...WINES_DATABASE.map((w) => w.price)));
+  const maxPricePossible = useMemo(() => {
+    return wines.length > 0 ? Math.ceil(Math.max(...wines.map((w) => w.price))) : 100;
+  }, [wines]);
 
   const [color, setColor] = useState<string>("all");
   const [range, setRange] = useState<string>("all");
@@ -18,8 +22,12 @@ export function Shop() {
   const [sortBy, setSortBy] = useState<string>("featured");
   const [isFilterBoxOpen, setIsFilterBoxOpen] = useState(false);
 
+  const availableYears = useMemo(() => {
+    return Array.from(new Set(wines.map((w) => w.year))).sort().reverse();
+  }, [wines]);
+
   const filteredWines = useMemo(() => {
-    let list = WINES_DATABASE.filter((wine) => {
+    let list = wines.filter((wine) => {
       const matchColor = color === "all" || wine.color === color;
       const matchRange = range === "all" || wine.range === range;
       const matchYear = year === "all" || wine.year === year;
@@ -36,7 +44,7 @@ export function Shop() {
     }
 
     return list;
-  }, [color, range, year, maxPrice, sortBy]);
+  }, [wines, color, range, year, maxPrice, sortBy]);
 
   const resetFilters = () => {
     setColor("all");
@@ -50,12 +58,12 @@ export function Shop() {
     <div className="w-full">
       <div className="pt-36 sm:pt-40 md:pt-44 pb-20 px-6 lg:px-12 max-w-7xl mx-auto">
       {/* Top Title Bar */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 border-b border-bege/10 gap-4">
+      <div data-reveal className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 border-b border-bege/10 gap-4">
         <div>
           <span className="text-xs uppercase tracking-[0.3em] text-dourado font-semibold block mb-1">
             Coleção Vinicôa
           </span>
-          <h1 className="font-editorial text-3xl sm:text-5xl text-bege font-bold">
+          <h1 className="font-brand text-3xl sm:text-5xl text-bege font-bold">
             A Nossa Garrafeira
           </h1>
         </div>
@@ -125,10 +133,11 @@ export function Shop() {
               className="w-full bg-vinicoa-noir border border-bege/20 rounded-xl px-3 py-2 text-xs text-bege focus:border-dourado focus:outline-none transition cursor-pointer"
             >
               <option value="all">Todos os Anos</option>
-              <option value="2019">2019</option>
-              <option value="2020">2020</option>
-              <option value="2021">2021</option>
-              <option value="2022">2022</option>
+              {availableYears.map((yr) => (
+                <option key={yr} value={yr}>
+                  {yr}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -171,7 +180,7 @@ export function Shop() {
       {filteredWines.length === 0 ? (
         <div className="text-center py-20">
           <WineIcon className="w-12 h-12 mx-auto text-dourado/40 mb-3" />
-          <p className="text-base text-bege font-editorial">
+          <p className="text-base text-bege font-brand">
             Nenhum vinho encontrado com os filtros selecionados.
           </p>
           <button
@@ -183,9 +192,11 @@ export function Shop() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredWines.map((wine) => (
+          {filteredWines.map((wine, i) => (
             <div
               key={wine.id}
+              data-reveal
+              data-reveal-delay={String(Math.min((i % 4) + 1, 6))}
               className="rounded-2xl glass-luxury border border-bege/10 p-5 flex flex-col justify-between group hover:border-dourado/50 transition-all duration-300"
             >
               <Link to={`/vinhos/${wine.id}`} className="block">
@@ -205,7 +216,7 @@ export function Shop() {
                   </span>
                   <span>{wine.volume}</span>
                 </div>
-                <h3 className="font-editorial text-xl text-bege font-bold mb-1 group-hover:text-dourado transition">
+                <h3 className="font-brand text-xl text-bege font-bold mb-1 group-hover:text-dourado transition">
                   {wine.title}
                 </h3>
                 <p className="text-xs text-bege-dark line-clamp-2 mb-4 leading-relaxed font-light">
@@ -242,8 +253,8 @@ export function Shop() {
       {/* CTA DE INCENTIVO À COMPRA DE VINHOS */}
       <WinePurchaseCTA />
 
-      {/* SECÇÃO DE MAPA E CONTACTOS */}
-      <MapAndContactSection />
+      {/* DO SABUGAL PARA O MUNDO */}
+      <GlobeSection />
     </div>
   );
 }

@@ -31,7 +31,7 @@ export function Enoturismo() {
         <span className="text-xs uppercase tracking-[0.3em] text-dourado font-semibold block mb-2">
           Visitas & Degustações
         </span>
-        <h1 className="font-editorial text-4xl sm:text-5xl text-bege font-bold mb-4">
+        <h1 className="font-brand text-4xl sm:text-5xl text-bege font-bold mb-4">
           Enoturismo no Sabugal
         </h1>
         <p className="text-xs sm:text-sm text-bege-dark leading-relaxed font-light">
@@ -51,7 +51,7 @@ export function Enoturismo() {
                 25,00€ <span className="text-xs text-bege-muted font-normal">/ pessoa</span>
               </span>
             </div>
-            <h3 className="font-editorial text-2xl font-bold text-bege mb-2">
+            <h3 className="font-brand text-2xl font-bold text-bege mb-2">
               Descobrir o Terroir do Sabugal
             </h3>
             <p className="text-xs text-bege-dark mb-4 leading-relaxed font-light">
@@ -85,7 +85,7 @@ export function Enoturismo() {
                 45,00€ <span className="text-xs text-bege-muted font-normal">/ pessoa</span>
               </span>
             </div>
-            <h3 className="font-editorial text-2xl font-bold text-bege mb-2">
+            <h3 className="font-brand text-2xl font-bold text-bege mb-2">
               Harmonização das Cinco Quinas
             </h3>
             <p className="text-xs text-bege-dark mb-4 leading-relaxed font-light">
@@ -111,7 +111,7 @@ export function Enoturismo() {
 
       {/* Formulário de Reserva */}
       <div id="booking-form" className="glass-luxury p-8 sm:p-10 rounded-3xl border border-dourado/20 max-w-2xl mx-auto">
-        <h3 className="font-editorial text-2xl font-bold text-bege mb-6 text-center">
+        <h3 className="font-brand text-2xl font-bold text-bege mb-6 text-center">
           Marcação de Visita
         </h3>
         <form onSubmit={handleSubmit} className="space-y-4">

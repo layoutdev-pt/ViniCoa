@@ -28,11 +28,11 @@ export function Checkout() {
         <span className="text-xs uppercase tracking-widest text-dourado font-bold block mb-1">
           Pagamento Autorizado
         </span>
-        <h1 className="font-editorial text-3xl font-bold text-bege mb-3">
+        <h1 className="font-brand text-3xl font-bold text-bege mb-3">
           Obrigado pela sua Encomenda!
         </h1>
         <p className="text-xs sm:text-sm text-bege-dark leading-relaxed mb-8">
-          Enviámos a confirmação com o recibo e guia de transporte para o seu e-mail ({email || "o seu e-mail"}). As garrafas serão expedidas em embalagem refrigerada diretamente da nossa adega no Sabugal.
+          Enviámos a confirmação com o recibo e guia de transporte para o seu e-mail ({email || "o seu e-mail"}). As garrafas serão expedidas a partir do Sabugal, em embalagem de proteção.
         </p>
         <Link
           to="/vinhos"
@@ -49,17 +49,17 @@ export function Checkout() {
     return (
       <div className="pt-36 sm:pt-40 md:pt-44 pb-24 px-6 max-w-3xl mx-auto text-center">
         <ShoppingBag className="w-14 h-14 text-dourado/40 mx-auto mb-4" />
-        <h1 className="font-editorial text-3xl font-bold text-bege mb-2">
+        <h1 className="font-brand text-3xl font-bold text-bege mb-2">
           O Seu Cesto Está Vazio
         </h1>
         <p className="text-xs text-bege-dark mb-8">
           Adicione vinhos da nossa garrafeira para prosseguir com a encomenda.
         </p>
 
-        {/* Sugestões da Adega com Adição Rápida */}
+        {/* Sugestões da Garrafeira com Adição Rápida */}
         <div className="text-left mb-8">
           <span className="text-xs uppercase tracking-widest text-dourado font-semibold block mb-4 text-center">
-            Sugestões da Adega do Sabugal
+            Sugestões da garrafeira
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {recommended.map((wine) => (
@@ -110,7 +110,7 @@ export function Checkout() {
         <span className="text-xs uppercase tracking-[0.3em] text-dourado font-semibold block mb-1">
           Passo Final
         </span>
-        <h1 className="font-editorial text-3xl sm:text-4xl text-bege font-bold">
+        <h1 className="font-brand text-3xl sm:text-4xl text-bege font-bold">
           Finalizar Compra
         </h1>
       </div>
@@ -385,7 +385,7 @@ export function Checkout() {
             </div>
             <div className="flex justify-between text-bege-muted">
               <span>Envio</span>
-              <span>{shippingCost === 0 ? "Grátis" : formatMoney(shippingCost)}</span>
+              <span>{formatMoney(shippingCost)}</span>
             </div>
             <div className="flex justify-between text-base font-bold text-dourado pt-2 border-t border-bege/10">
               <span>Total</span>

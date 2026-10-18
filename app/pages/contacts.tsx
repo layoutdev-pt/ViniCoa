@@ -1,164 +1,452 @@
-import { useState } from "react";
-import { MessageSquare, Send, CheckCircle2, PackageCheck, UtensilsCrossed } from "lucide-react";
-import { useCart } from "../lib/cart-context";
+import { useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router";
+import {
+  Phone,
+  Mail,
+  MessageCircle,
+  Clock,
+  PackageCheck,
+  UtensilsCrossed,
+  ShoppingBag,
+  ChevronDown,
+  CheckCircle2,
+} from "lucide-react";
 import { WinePurchaseCTA } from "../components/ui/WinePurchaseCTA";
-import { MapAndContactSection } from "../components/ui/MapAndContactSection";
+import { GlobeSection } from "../components/ui/GlobeSection";
+import penedosImg from "../assets/images/penedos-granito.jpg";
+
+export function meta() {
+  return [
+    { title: "Contactos — Vinicôa Sabugal" },
+    {
+      name: "description",
+      content:
+        "Fale com a Vinicôa: encomendas online, restauração e garrafeiras. Vinhos selecionados de vários produtores e regiões, com envio para todo o mundo.",
+    },
+  ];
+}
+
+const ASSUNTOS = {
+  duvida: "Dúvidas sobre os vinhos",
+  encomenda: "Encomenda existente",
+  horeca: "Restauração e garrafeiras",
+  outro: "Outro assunto",
+} as const;
+
+type Assunto = keyof typeof ASSUNTOS;
+
+const isAssunto = (v: string | null): v is Assunto => !!v && v in ASSUNTOS;
+
+// Cada perfil escolhe um assunto do formulário ou leva a outra página
+const PERFIS: { assunto?: Assunto; to?: string; icon: typeof PackageCheck; titulo: string; texto: string; acao: string }[] = [
+  {
+    assunto: "duvida",
+    icon: PackageCheck,
+    titulo: "Particulares",
+    texto: "Ajuda na escolha de vinhos, ofertas personalizadas e acompanhamento de encomendas.",
+    acao: "Escrever mensagem",
+  },
+  {
+    assunto: "horeca",
+    icon: UtensilsCrossed,
+    titulo: "Profissionais",
+    texto: "Condições para restauração, garrafeiras, sommeliers e distribuidores.",
+    acao: "Escrever mensagem",
+  },
+  {
+    to: "/vinhos",
+    icon: ShoppingBag,
+    titulo: "Loja online",
+    texto: "Toda a nossa garrafeira está disponível online, com entrega em casa em Portugal e no estrangeiro.",
+    acao: "Ver os vinhos",
+  },
+];
+
+const FAQ = [
+  {
+    p: "Os vinhos são produzidos pela Vinicôa?",
+    r: "Não. A Vinicôa é uma garrafeira com raízes no Sabugal: selecionamos e vendemos vinhos de vários produtores e regiões, que enviamos para todo o mundo.",
+  },
+  {
+    p: "Quanto custam os portes de envio?",
+    r: "O custo de envio depende do destino e é apresentado no checkout, antes de finalizar a compra.",
+  },
+  {
+    p: "Como acompanho a minha encomenda?",
+    r: "Assim que a encomenda for expedida, enviamos-lhe um e-mail com o número de seguimento. Se tiver alguma dúvida, contacte-nos com o número da encomenda.",
+  },
+  {
+    p: "Enviam para fora de Portugal?",
+    r: "Sim, enviamos para todo o mundo. O custo de envio depende do destino e é indicado no checkout antes de concluir a compra.",
+  },
+  {
+    p: "E se uma garrafa chegar danificada?",
+    r: "Enviamos em embalagens isotérmicas de alta proteção, mas se algo correr mal, envie-nos uma fotografia nas 48 horas seguintes à entrega e substituímos a garrafa sem custos.",
+  },
+  {
+    p: "Posso pedir fatura com NIF?",
+    r: "Sim. Indique o NIF no checkout, no passo de faturação. Se já fez a encomenda sem NIF, contacte-nos com o número da encomenda.",
+  },
+  {
+    p: "Vendem para restaurantes e garrafeiras?",
+    r: "Sim. Temos condições próprias para o canal HoReCa e garrafeiras, com fichas técnicas de cada vinho. Escolha «Restauração e garrafeiras» no formulário.",
+  },
+  {
+    p: "Têm loja física?",
+    r: "Não. A Vinicôa vende exclusivamente online, através desta garrafeira. Se precisar de ajuda a escolher um vinho, fale connosco por telefone, WhatsApp ou e-mail.",
+  },
+  {
+    p: "Porque é pedida a confirmação de idade?",
+    r: "A lei portuguesa (Decreto-Lei n.º 106/2015) só permite a venda de bebidas alcoólicas a maiores de 18 anos, incluindo na internet.",
+  },
+];
+
+const inputClass =
+  "w-full px-4 py-3.5 rounded-xl bg-vinicoa-noir border border-bege/20 text-sm text-bege placeholder:text-bege-muted/60 focus:border-dourado focus:outline-none transition-colors";
+const labelClass = "block font-downey text-[11px] uppercase tracking-[0.24em] text-dourado mb-2";
 
 export function Contacts() {
-  const { showToast } = useCart();
+  const [searchParams] = useSearchParams();
+  const initial = searchParams.get("assunto");
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [subject, setSubject] = useState("Dúvida Comercial");
+  const [phone, setPhone] = useState("");
+  const [subject, setSubject] = useState<Assunto>(isAssunto(initial) ? initial : "duvida");
   const [message, setMessage] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [honeypot, setHoneypot] = useState("");
+  const [sent, setSent] = useState(false);
+
+  const formRef = useRef<HTMLDivElement>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
+  const openedAt = useRef(Date.now());
+
+  // Links como /contactos?assunto=horeca pré-selecionam o assunto
+  useEffect(() => {
+    if (isAssunto(initial)) setSubject(initial);
+  }, [initial]);
+
+  const chooseSubject = (a: Assunto) => {
+    setSubject(a);
+    setSent(false);
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => messageRef.current?.focus({ preventScroll: true }), 500);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    showToast("Mensagem enviada com sucesso! A nossa equipa entrará em contacto brevemente.");
+    // Anti-spam: campo isco preenchido ou envio em menos de 3 s = bot. Ignora em silêncio.
+    const isBot = honeypot.trim() !== "" || Date.now() - openedAt.current < 3000;
+    if (!isBot) {
+      // Envio real (action + serviço de e-mail) ainda por ligar
+    }
+    setSent(true);
     setName("");
     setEmail("");
+    setPhone("");
     setMessage("");
+    setConsent(false);
   };
 
   return (
     <div className="w-full">
-      <div className="pt-36 sm:pt-40 md:pt-44 pb-20 px-6 lg:px-12 max-w-6xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <span className="font-downey text-xs uppercase tracking-[0.35em] text-dourado font-semibold block mb-2">
-            Linha Direta com a Adega
-          </span>
-          <h1 className="font-editorial text-4xl sm:text-5xl text-bege font-bold mb-4">
-            Contacte a Vinicôa
+      {/* CABEÇALHO */}
+      <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-[#0D0B0C]">
+        <img
+          src={penedosImg}
+          alt="Penedo de granito nas encostas do Sabugal"
+          className="absolute inset-0 w-full h-full object-cover img-mono opacity-40"
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(13,11,12,0.35)_0%,rgba(13,11,12,0.88)_75%)]" />
+
+        <div className="relative w-full max-w-4xl mx-auto px-6 pt-36 pb-20 flex flex-col items-center text-center">
+          <p data-reveal="fade" className="font-downey text-[11px] sm:text-xs uppercase tracking-[0.5em] text-[#E8DCC6]/75 mb-8">Contactos</p>
+          <h1 data-reveal data-reveal-delay="1" className="font-brand uppercase text-dourado text-3xl sm:text-4xl lg:text-5xl leading-[1.25] tracking-[0.16em]">
+            Fale connosco
           </h1>
-          <p className="text-xs sm:text-sm text-bege-dark leading-relaxed font-light">
-            Estamos inteiramente disponíveis para esclarecer dúvidas sobre os nossos vinhos, apoiar na sua encomenda particular ou apresentar condições de distribuição para o canal HoReCa e garrafeiras.
+          <span data-reveal="zoom" data-reveal-delay="2" className="block w-14 h-px bg-dourado/60 my-8" aria-hidden="true" />
+          <p data-reveal data-reveal-delay="3" className="text-base sm:text-lg text-[#E8DCC6]/85 leading-relaxed max-w-xl">
+            Encomendas, parcerias ou dúvidas sobre os nossos vinhos: respondemos a todos os pedidos em até 24 horas úteis.
           </p>
         </div>
+      </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-start mb-16">
-          {/* Informação e Apoio ao Cliente */}
-          <div className="md:col-span-5 space-y-5">
-            <div className="glass-luxury p-7 rounded-3xl border border-dourado/20">
-              <h3 className="font-downey text-xs uppercase tracking-wider text-dourado font-bold mb-4 flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-dourado" /> Apoio Especializado
-              </h3>
-              <p className="text-xs text-bege-dark leading-relaxed font-light mb-6">
-                A nossa equipa acompanha cada pedido com a dedicação que as nossas edições merecem. Envie-nos a sua mensagem ou utilize os nossos contactos diretos abaixo.
-              </p>
+      {/* COMO PODEMOS AJUDAR + FORMULÁRIO */}
+      <section className="bg-vinicoa-noir px-6 lg:px-12 py-20 lg:py-28">
+        <div className="max-w-7xl mx-auto">
+          {/* Perfis: escolhem o assunto do formulário */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-16">
+            {PERFIS.map(({ assunto, to, icon: Icon, titulo, texto, acao }, i) => {
+              const className = `group block text-left rounded-3xl border p-7 transition-colors cursor-pointer ${
+                assunto && subject === assunto ? "border-dourado bg-vinicoa-charcoal" : "border-dourado/20 hover:border-dourado/60"
+              }`;
+              const content = (
+                <>
+                  <Icon className="w-6 h-6 text-dourado mb-5" strokeWidth={1.25} />
+                  <h2 className="font-brand uppercase text-2xl text-bege tracking-[0.05em] mb-2">{titulo}</h2>
+                  <p className="text-base text-bege-dark leading-relaxed mb-5">{texto}</p>
+                  <span className="font-downey text-[11px] uppercase tracking-[0.24em] text-dourado border-b border-dourado/40 group-hover:border-dourado pb-1">
+                    {acao}
+                  </span>
+                </>
+              );
+              return to ? (
+                <Link key={titulo} to={to} className={className} data-reveal data-reveal-delay={String(i + 1)}>
+                  {content}
+                </Link>
+              ) : (
+                <button key={titulo} data-reveal data-reveal-delay={String(i + 1)} type="button" onClick={() => assunto && chooseSubject(assunto)} className={className}>
+                  {content}
+                </button>
+              );
+            })}
+          </div>
 
-              <div className="space-y-4 text-xs text-bege-dark">
-                <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/5 border border-bege/10">
-                  <PackageCheck className="w-4 h-4 text-dourado shrink-0 mt-0.5" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+            {/* Contactos diretos */}
+            <div data-reveal="left" className="lg:col-span-5">
+              <span className="font-downey text-xs uppercase tracking-[0.35em] text-dourado block mb-4">
+                Contactos diretos
+              </span>
+              <h2 className="font-brand uppercase text-3xl sm:text-4xl text-bege tracking-[0.05em] mb-8">
+                Prefere falar diretamente?
+              </h2>
+
+              <dl className="border-t border-dourado/25">
+                <div className="py-5 border-b border-dourado/25 grid grid-cols-[1.75rem_1fr] gap-4">
+                  <Phone className="w-5 h-5 text-dourado mt-0.5" strokeWidth={1.5} />
                   <div>
-                    <strong className="text-bege block font-semibold mb-0.5">Encomendas Particulares</strong>
-                    <span className="text-[11px] text-bege-muted">Apoio na seleção de garrafas, personalização e acompanhamento de envios.</span>
+                    <dt className="font-downey text-[11px] uppercase tracking-[0.24em] text-bege-muted mb-1">Telefone</dt>
+                    <dd>
+                      <a href="tel:+351271000000" className="text-lg text-bege hover:text-dourado transition-colors">
+                        +351 271 000 000
+                      </a>
+                    </dd>
                   </div>
                 </div>
-
-                <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/5 border border-bege/10">
-                  <UtensilsCrossed className="w-4 h-4 text-dourado shrink-0 mt-0.5" />
+                <div className="py-5 border-b border-dourado/25 grid grid-cols-[1.75rem_1fr] gap-4">
+                  <MessageCircle className="w-5 h-5 text-dourado mt-0.5" strokeWidth={1.5} />
                   <div>
-                    <strong className="text-bege block font-semibold mb-0.5">Restauração & Garrafeiras</strong>
-                    <span className="text-[11px] text-bege-muted">Condições especiais para profissionais, sommeliers e distribuidores.</span>
+                    <dt className="font-downey text-[11px] uppercase tracking-[0.24em] text-bege-muted mb-1">WhatsApp</dt>
+                    <dd>
+                      <a
+                        href="https://wa.me/351271000000?text=Ol%C3%A1!%20Gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20os%20vinhos%20da%20Vinic%C3%B4a."
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-lg text-bege hover:text-dourado transition-colors"
+                      >
+                        Iniciar conversa
+                      </a>
+                    </dd>
                   </div>
                 </div>
-
-                <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/5 border border-bege/10">
-                  <CheckCircle2 className="w-4 h-4 text-dourado shrink-0 mt-0.5" />
+                <div className="py-5 border-b border-dourado/25 grid grid-cols-[1.75rem_1fr] gap-4">
+                  <Mail className="w-5 h-5 text-dourado mt-0.5" strokeWidth={1.5} />
                   <div>
-                    <strong className="text-bege block font-semibold mb-0.5">Resposta Rápida</strong>
-                    <span className="text-[11px] text-bege-muted">Compromisso de resposta a todos os pedidos num prazo máximo de 24 horas úteis.</span>
+                    <dt className="font-downey text-[11px] uppercase tracking-[0.24em] text-bege-muted mb-1">E-mail</dt>
+                    <dd>
+                      <a href="mailto:geral@vinicoa.pt" className="text-lg text-bege hover:text-dourado transition-colors">
+                        geral@vinicoa.pt
+                      </a>
+                    </dd>
                   </div>
                 </div>
-              </div>
+                <div className="py-5 border-b border-dourado/25 grid grid-cols-[1.75rem_1fr] gap-4">
+                  <Clock className="w-5 h-5 text-dourado mt-0.5" strokeWidth={1.5} />
+                  <div>
+                    <dt className="font-downey text-[11px] uppercase tracking-[0.24em] text-bege-muted mb-1">Horário de apoio</dt>
+                    <dd className="text-base text-bege-dark leading-relaxed">
+                      Segunda a sexta: 09h00 — 18h00
+                      <br />
+                      Sábados: 10h00 — 13h00 (encomendas)
+                      <br />
+                      Domingos e feriados: encerrado
+                    </dd>
+                  </div>
+                </div>
+              </dl>
+            </div>
+
+            {/* Formulário */}
+            <div data-reveal="right" data-reveal-delay="1" ref={formRef} className="lg:col-span-7 scroll-mt-28 rounded-3xl bg-vinicoa-charcoal border border-dourado/20 p-7 sm:p-10">
+              {sent ? (
+                <div className="py-10 text-center flex flex-col items-center" role="status">
+                  <CheckCircle2 className="w-10 h-10 text-dourado mb-6" strokeWidth={1.25} />
+                  <h2 className="font-brand uppercase text-3xl text-bege tracking-[0.05em] mb-4">Mensagem enviada</h2>
+                  <p className="text-base text-bege-dark leading-relaxed max-w-sm mb-8">
+                    Obrigado pelo contacto. A nossa equipa responde em até 24 horas úteis.
+                  </p>
+                  <button type="button" onClick={() => setSent(false)} className="btn-brand btn-bordo">
+                    Enviar outra mensagem
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <h2 className="font-brand uppercase text-3xl text-bege tracking-[0.05em] mb-2">Envie-nos uma mensagem</h2>
+                  <p className="text-base text-bege-dark mb-8">Os campos com * são obrigatórios.</p>
+
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div>
+                        <label htmlFor="ct-nome" className={labelClass}>
+                          Nome *
+                        </label>
+                        <input
+                          id="ct-nome"
+                          type="text"
+                          required
+                          autoComplete="name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="O seu nome"
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="ct-email" className={labelClass}>
+                          E-mail *
+                        </label>
+                        <input
+                          id="ct-email"
+                          type="email"
+                          required
+                          autoComplete="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="email@exemplo.pt"
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div>
+                        <label htmlFor="ct-telefone" className={labelClass}>
+                          Telefone
+                        </label>
+                        <input
+                          id="ct-telefone"
+                          type="tel"
+                          autoComplete="tel"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="Opcional"
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="ct-assunto" className={labelClass}>
+                          Assunto *
+                        </label>
+                        <select
+                          id="ct-assunto"
+                          value={subject}
+                          onChange={(e) => setSubject(e.target.value as Assunto)}
+                          className={inputClass}
+                        >
+                          {Object.entries(ASSUNTOS).map(([value, label]) => (
+                            <option key={value} value={value}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="ct-mensagem" className={labelClass}>
+                        Mensagem *
+                      </label>
+                      <textarea
+                        id="ct-mensagem"
+                        ref={messageRef}
+                        rows={6}
+                        required
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder={
+                          subject === "encomenda"
+                              ? "Indique o número da encomenda."
+                              : "Como podemos ajudar?"
+                        }
+                        className={`${inputClass} resize-y`}
+                      />
+                    </div>
+
+                    {/* Campo isco anti-spam: invisível para pessoas, preenchido por bots */}
+                    <div className="absolute -left-[9999px] w-px h-px overflow-hidden" aria-hidden="true">
+                      <label htmlFor="ct-website">Website</label>
+                      <input
+                        id="ct-website"
+                        type="text"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        value={honeypot}
+                        onChange={(e) => setHoneypot(e.target.value)}
+                      />
+                    </div>
+
+                    <label htmlFor="ct-rgpd" className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        id="ct-rgpd"
+                        type="checkbox"
+                        required
+                        checked={consent}
+                        onChange={(e) => setConsent(e.target.checked)}
+                        className="mt-1 w-4 h-4 shrink-0 accent-[#6B0015] cursor-pointer"
+                      />
+                      <span className="text-sm text-bege-dark leading-relaxed">
+                        Autorizo a Vinicôa a usar estes dados apenas para responder ao meu pedido, de acordo com a
+                        Política de Privacidade (RGPD). *
+                      </span>
+                    </label>
+
+                    <button type="submit" className="btn-brand btn-bordo w-full !py-4">
+                      Enviar mensagem
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Formulário de Contacto */}
-          <div className="md:col-span-7 glass-luxury p-8 sm:p-10 rounded-3xl border border-dourado/25 shadow-2xl relative">
-            <h3 className="font-editorial text-2xl text-bege font-bold mb-2">
-              Envie-nos uma Mensagem
-            </h3>
-            <p className="text-xs text-bege-muted mb-6">
-              Preencha os campos abaixo para obter uma resposta personalizada.
-            </p>
+      {/* DO SABUGAL PARA O MUNDO */}
+      <GlobeSection />
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs uppercase text-dourado font-semibold mb-1">
-                    Nome Completo
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="O seu nome"
-                    className="w-full px-4 py-3 rounded-xl bg-vinicoa-noir border border-bege/20 text-xs text-bege focus:border-dourado focus:outline-none placeholder:text-bege-muted/50"
+      {/* PERGUNTAS FREQUENTES */}
+      <section className="bg-vinicoa-noir px-6 lg:px-12 py-20 lg:py-28">
+        <div className="max-w-3xl mx-auto">
+          <div data-reveal className="text-center mb-12">
+            <span className="font-downey text-xs uppercase tracking-[0.35em] text-dourado block mb-4">
+              Perguntas frequentes
+            </span>
+            <h2 className="font-brand uppercase text-4xl sm:text-5xl text-bege tracking-[0.05em]">
+              Antes de nos escrever
+            </h2>
+          </div>
+
+          <div className="border-t border-dourado/25">
+            {FAQ.map((item, i) => (
+              <details data-reveal data-reveal-delay={String(Math.min(i + 1, 6))} key={item.p} className="group border-b border-dourado/25">
+                <summary className="flex items-center justify-between gap-6 py-6 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                  <span className="font-brand uppercase text-lg sm:text-xl text-bege tracking-[0.04em]">{item.p}</span>
+                  <ChevronDown
+                    className="w-5 h-5 text-dourado shrink-0 transition-transform duration-300 group-open:rotate-180"
+                    strokeWidth={1.5}
                   />
-                </div>
-                <div>
-                  <label className="block text-xs uppercase text-dourado font-semibold mb-1">
-                    E-mail
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="email@exemplo.pt"
-                    className="w-full px-4 py-3 rounded-xl bg-vinicoa-noir border border-bege/20 text-xs text-bege focus:border-dourado focus:outline-none placeholder:text-bege-muted/50"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs uppercase text-dourado font-semibold mb-1">
-                  Assunto
-                </label>
-                <select
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-vinicoa-noir border border-bege/20 text-xs text-bege focus:border-dourado focus:outline-none"
-                >
-                  <option value="Dúvida Comercial">Dúvida sobre os Vinhos / Loja Online</option>
-                  <option value="Distribuição HoReCa">Parcerias de Distribuição / Restaurantes</option>
-                  <option value="Apoio a Encomenda">Estado de Encomenda Existente</option>
-                  <option value="Outro">Outro Assunto</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs uppercase text-dourado font-semibold mb-1">
-                  Mensagem
-                </label>
-                <textarea
-                  rows={5}
-                  required
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Como o podemos ajudar?"
-                  className="w-full px-4 py-3 rounded-xl bg-vinicoa-noir border border-bege/20 text-xs text-bege focus:border-dourado focus:outline-none placeholder:text-bege-muted/50"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-4 rounded-xl bg-bordo hover:bg-bordo-light text-bege text-xs uppercase font-bold tracking-[0.15em] transition cursor-pointer shadow-xl border border-dourado/30 flex items-center justify-center gap-2 group"
-              >
-                <span>Enviar Mensagem</span>
-                <Send className="w-3.5 h-3.5 text-dourado group-hover:translate-x-1 transition-transform" />
-              </button>
-            </form>
+                </summary>
+                <p className="pb-6 pr-10 text-base text-bege-dark leading-relaxed">{item.r}</p>
+              </details>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* CTA DE INCENTIVO À COMPRA DE VINHOS */}
       <WinePurchaseCTA />
-
-      {/* SECÇÃO DE MAPA E CONTACTOS */}
-      <MapAndContactSection />
     </div>
   );
 }

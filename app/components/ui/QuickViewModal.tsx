@@ -1,13 +1,15 @@
 import { X, Utensils } from "lucide-react";
 import { Link } from "react-router";
 import { useCart } from "../../lib/cart-context";
+import { useAdmin } from "../../lib/admin-context";
 import { getWineById, formatMoney } from "../../lib/wines";
 
 export function QuickViewModal() {
   const { quickViewWineId, closeQuickView, addToCart } = useCart();
+  const { wines } = useAdmin();
 
   if (!quickViewWineId) return null;
-  const wine = getWineById(quickViewWineId);
+  const wine = wines.find((w) => w.id === quickViewWineId) || getWineById(quickViewWineId);
   if (!wine) return null;
 
   return (
@@ -42,7 +44,7 @@ export function QuickViewModal() {
             <span className="text-xs uppercase tracking-[0.2em] text-dourado font-semibold block mb-1">
               Perfil Sensorial & Prova
             </span>
-            <h3 id="qv-title" className="font-editorial text-3xl font-bold text-bege mb-2">
+            <h3 id="qv-title" className="font-brand text-3xl font-bold text-bege mb-2">
               {wine.title}
             </h3>
             <div className="flex items-center gap-4 mb-4">

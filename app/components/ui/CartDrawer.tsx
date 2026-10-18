@@ -13,14 +13,10 @@ export function CartDrawer() {
     subtotal,
     shippingCost,
     total,
-    freeShippingThreshold,
     addToCart,
   } = useCart();
 
   if (!isCartOpen) return null;
-
-  const progressPercent = Math.min((subtotal / freeShippingThreshold) * 100, 100);
-  const remainingForFreeShipping = freeShippingThreshold - subtotal;
 
   return (
     <div
@@ -42,7 +38,7 @@ export function CartDrawer() {
             <div className="flex items-center justify-between pb-5 border-b border-bege/10">
               <div className="flex items-center gap-2.5">
                 <ShoppingBag className="w-5 h-5 text-dourado" />
-                <h3 className="font-editorial text-2xl font-bold text-bege">O Seu Cesto</h3>
+                <h3 className="font-brand text-2xl font-bold text-bege">O Seu Cesto</h3>
               </div>
               <button
                 onClick={closeCart}
@@ -51,28 +47,6 @@ export function CartDrawer() {
               >
                 <X className="w-5 h-5" />
               </button>
-            </div>
-
-            {/* Barra de Portes Grátis */}
-            <div className="mt-4 p-3.5 rounded-xl bg-bordo-surface border border-dourado/20">
-              <div className="flex justify-between text-xs mb-1.5 font-medium">
-                <span className="text-bege">Portes Grátis (Portugal Continental)</span>
-                <span
-                  className={`font-bold ${
-                    subtotal >= freeShippingThreshold ? "text-emerald-400" : "text-dourado"
-                  }`}
-                >
-                  {subtotal >= freeShippingThreshold
-                    ? "Parabéns! Portes Grátis."
-                    : `Faltam ${formatMoney(remainingForFreeShipping)}`}
-                </span>
-              </div>
-              <div className="w-full bg-vinicoa-noir h-1.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-dourado h-full rounded-full transition-all duration-500"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
             </div>
 
             {/* Lista de Itens */}
@@ -186,7 +160,7 @@ export function CartDrawer() {
                 <div className="flex justify-between text-bege-muted">
                   <span>Envio (Garrafeira Refrigerada)</span>
                   <span className="text-bege font-semibold">
-                    {shippingCost === 0 ? "Grátis" : formatMoney(shippingCost)}
+                    {formatMoney(shippingCost)}
                   </span>
                 </div>
                 <div className="flex justify-between text-base font-bold text-dourado pt-2 border-t border-bege/10">

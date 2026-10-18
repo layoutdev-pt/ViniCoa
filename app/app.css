@@ -1,10 +1,26 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Berlin Sans';
+  src: url('/fonts/berlinsans.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Downey';
+  src: url('/fonts/downey.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --color-bordo: #6B0015;
   --color-bordo-dark: #48000E;
-  --color-bordo-light: #8A0F26;
-  --color-bordo-surface: #240409;
+  --color-bordo-light: #82071F;
+  --color-bordo-surface: #48000E;
 
   --color-dourado: #C49A4A;
   --color-dourado-light: #DEB96D;
@@ -20,19 +36,75 @@
   --color-vinicoa-charcoal: #171415;
   --color-vinicoa-card: #1F1A1B;
 
-  --font-brand: 'Berlin Sans FB', 'Berlin Sans', sans-serif;
-  --font-downey: 'Downey', 'Plus Jakarta Sans', sans-serif;
-  --font-display: 'Berlin Sans FB', 'Berlin Sans', 'Cinzel', serif;
-  --font-editorial: 'Cormorant Garamond', serif;
-  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  /* Manual de Identidade: Berlin Sans (principal) + Downey (secundária) */
+  --font-brand: 'Berlin Sans', 'Berlin Sans FB', sans-serif;
+  --font-downey: 'Downey', 'Lato', sans-serif;
+  --font-display: var(--font-brand);
+  --font-editorial: var(--font-brand);
+  --font-sans: 'Lato', system-ui, sans-serif;
 }
 
-/* Classes utilitárias do Brandbook */
-.font-brand {
-  font-family: var(--font-brand);
-}
+/* As fontes da marca só têm um peso: evitar negrito/itálico sintético */
+.font-brand,
+.font-editorial,
+.font-display,
 .font-downey {
-  font-family: var(--font-downey);
+  font-synthesis: none;
+  font-style: normal;
+}
+
+@layer base {
+  :where(h1, h2, h3, h4).font-brand {
+    font-weight: normal;
+    line-height: 1.05;
+    letter-spacing: 0.03em;
+  }
+}
+
+/* Botões da marca: Downey em maiúsculas espaçadas, cantos arredondados */
+@layer components {
+  .btn-brand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.95rem 2rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-xl);
+    font-family: var(--font-downey);
+    font-size: 0.75rem;
+    line-height: 1;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+  .btn-bordo {
+    background: var(--color-bordo);
+    border-color: var(--color-bordo);
+    color: var(--color-bege-light);
+  }
+  .btn-bordo:hover {
+    background: var(--color-bordo-light);
+    border-color: var(--color-bordo-light);
+  }
+  .btn-bege {
+    background: var(--color-bege);
+    border-color: var(--color-bege);
+    color: var(--color-bordo);
+  }
+  .btn-bege:hover {
+    background: var(--color-bege-light);
+    border-color: var(--color-bege-light);
+  }
+  .btn-outline-light {
+    border-color: rgba(232, 220, 198, 0.45);
+    color: var(--color-bege-light);
+  }
+  .btn-outline-light:hover {
+    border-color: var(--color-dourado);
+    color: var(--color-dourado);
+  }
 }
 
 /* Base styles */
@@ -64,27 +136,33 @@ body {
   background: #C49A4A;
 }
 
-/* Utilitários Visuais de Luxo */
-.hero-gradient {
-  background: radial-gradient(circle at 50% 30%, rgba(107, 0, 21, 0.42) 0%, rgba(13, 11, 12, 0.96) 85%);
-}
-
+/* Superfícies sólidas (sem vidro, sem brilho) */
 .glass-luxury {
-  background: rgba(23, 20, 21, 0.82);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(196, 154, 74, 0.22);
-  transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+  background: var(--color-vinicoa-charcoal);
+  border: 1px solid rgba(196, 154, 74, 0.2);
+  transition: border-color 0.35s ease;
 }
 
-.pedestal-radial-light {
-  background: radial-gradient(ellipse 65% 35% at 50% 80%, rgba(196, 154, 74, 0.36) 0%, rgba(107, 0, 21, 0.18) 50%, transparent 75%);
+/* Fotografia a preto e branco de alto contraste */
+.img-mono {
+  filter: grayscale(1) contrast(1.12) brightness(0.9);
 }
 
-.watermark-exclusive {
-  font-family: var(--font-editorial);
-  font-style: italic;
-  letter-spacing: -0.04em;
+/* Duotone bordô (aplicação sobre fundos do manual) */
+/* (posicionamento fica a cargo das utilities: relative/absolute) */
+.duotone-bordo {
+  isolation: isolate;
+}
+.duotone-bordo > img {
+  filter: grayscale(1) contrast(1.15);
+}
+.duotone-bordo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-bordo);
+  mix-blend-mode: multiply;
+  pointer-events: none;
 }
 
 /* 3D Carousel Stage */
@@ -96,14 +174,44 @@ body {
 
 .carousel-3d-card {
   position: absolute;
-  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), 
-              opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), 
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
               filter 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform, opacity, filter;
   user-select: none;
   -webkit-user-select: none;
   cursor: pointer;
 }
+
+.pedestal-radial-light {
+  background: radial-gradient(ellipse 65% 35% at 50% 80%, rgba(196, 154, 74, 0.28) 0%, rgba(107, 0, 21, 0.14) 50%, transparent 75%);
+}
+
+/* Animações de entrada (ver app/lib/use-reveal.ts) */
+.reveal-on [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  transition:
+    opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--reveal-step, 0) * 100ms);
+  will-change: opacity, transform;
+}
+.reveal-on [data-reveal="fade"] { transform: none; }
+.reveal-on [data-reveal="zoom"] { transform: scale(0.96); }
+.reveal-on [data-reveal="left"] { transform: translate3d(-32px, 0, 0); }
+.reveal-on [data-reveal="right"] { transform: translate3d(32px, 0, 0); }
+.reveal-on [data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+[data-reveal-delay="1"] { --reveal-step: 1; }
+[data-reveal-delay="2"] { --reveal-step: 2; }
+[data-reveal-delay="3"] { --reveal-step: 3; }
+[data-reveal-delay="4"] { --reveal-step: 4; }
+[data-reveal-delay="5"] { --reveal-step: 5; }
+[data-reveal-delay="6"] { --reveal-step: 6; }
 
 /* Suporte para Modo Claro (Brandbook Bege & Bordô) */
 html.light body {
@@ -119,14 +227,9 @@ html.light .bg-vinicoa-charcoal {
   background-color: #F6F0E6 !important;
 }
 
-html.light .hero-gradient {
-  background: radial-gradient(circle at 50% 30%, rgba(196, 154, 74, 0.22) 0%, rgba(248, 244, 235, 0.97) 85%) !important;
-}
-
 html.light .glass-luxury {
-  background: rgba(255, 252, 246, 0.94) !important;
-  border-color: rgba(196, 154, 74, 0.32) !important;
-  box-shadow: 0 10px 30px -8px rgba(107, 0, 21, 0.1) !important;
+  background: #FFFCF6 !important;
+  border-color: rgba(107, 0, 21, 0.16) !important;
 }
 
 html.light .text-bege {
@@ -146,9 +249,55 @@ html.light .border-bege\/20 {
   border-color: rgba(107, 0, 21, 0.16) !important;
 }
 
+html.light #navbar {
+  background-color: #EFE7DA !important;
+  border-color: rgba(196, 154, 74, 0.25) !important;
+}
+
 html.light #promo-bar {
   background-color: #6B0015 !important;
   color: #F8F4EB !important;
+}
+
+html.light .bg-bordo,
+html.light a.bg-bordo,
+html.light button.bg-bordo {
+  background-color: #6B0015 !important;
+  color: #F4EBD9 !important;
+}
+
+html.light a.bg-bordo .text-bege,
+html.light button.bg-bordo .text-bege,
+html.light .bg-bordo span {
+  color: #F4EBD9 !important;
+}
+
+/* Letras do Rodapé no Modo Claro (Vermelho Escuro / Bordô) */
+html.light #contacto {
+  background-color: #EFE7DA !important;
+  color: #381219 !important;
+}
+
+html.light #contacto p,
+html.light #contacto li,
+html.light #contacto span {
+  color: #5C3D42;
+}
+
+html.light #contacto a {
+  color: #381219;
+}
+
+html.light #contacto a:hover {
+  color: #C49A4A !important;
+}
+
+html.light #contacto h4 {
+  color: #9A7530 !important;
+}
+
+html.light #contacto .text-bege-muted {
+  color: #7D5D62 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { useCart } from "../../lib/cart-context";
-import { VinicoaLogo } from "./VinicoaLogo";
+import logoSimples from "../../assets/logos/logo_simples.svg";
 
 export function AgeGateModal() {
   const { isAgeVerified, verifyAge } = useCart();
@@ -16,15 +16,12 @@ export function AgeGateModal() {
       aria-modal="true"
       aria-labelledby="age-title"
     >
-      <div className="relative w-full max-w-lg p-8 sm:p-10 rounded-2xl glass-luxury border border-dourado/30 text-center shadow-2xl">
-        <div className="mb-6">
-          <VinicoaLogo showText={false} size="lg" />
+      <div className="relative w-full max-w-lg p-8 sm:p-12 rounded-2xl bg-vinicoa-noir border border-dourado/30 text-center">
+        <div className="mb-8 flex justify-center">
+          <img src={logoSimples} alt="Vinicôa Sabugal" className="h-28 w-auto object-contain" />
         </div>
 
-        <span className="text-xs uppercase tracking-[0.3em] text-dourado font-semibold block mb-2">
-          Tradição & Terroir do Sabugal
-        </span>
-        <h2 id="age-title" className="font-editorial text-3xl sm:text-4xl text-bege mb-4 tracking-wide font-bold">
+        <h2 id="age-title" className="font-brand text-2xl sm:text-3xl uppercase tracking-[0.12em] text-bege mb-4">
           Confirmação de Maioridade
         </h2>
 
@@ -37,15 +34,15 @@ export function AgeGateModal() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 onClick={verifyAge}
-                className="px-8 py-3.5 rounded-xl bg-bordo hover:bg-bordo-light text-bege font-semibold text-xs tracking-wider uppercase border border-dourado/40 shadow-lg transition-all duration-300 cursor-pointer"
+                className="px-8 py-3.5 rounded-xl bg-bordo hover:bg-bordo-light text-bege font-downey text-xs tracking-[0.2em] uppercase border border-bordo transition-colors duration-300 cursor-pointer"
               >
-                Tenho 18 Anos ou Mais (Entrar)
+                Tenho 18 anos ou mais
               </button>
               <button
                 onClick={() => setUnderageState(true)}
-                className="px-8 py-3.5 rounded-xl bg-transparent hover:bg-white/5 text-bege-dark hover:text-bege text-xs tracking-wider uppercase border border-bege/20 transition-all duration-300 cursor-pointer"
+                className="px-8 py-3.5 rounded-xl bg-transparent hover:border-bege/50 text-bege-dark hover:text-bege font-downey text-xs tracking-[0.2em] uppercase border border-bege/20 transition-colors duration-300 cursor-pointer"
               >
-                Sou Menor de Idade
+                Sou menor de idade
               </button>
             </div>
           </div>
@@ -66,7 +63,7 @@ export function AgeGateModal() {
           </div>
         )}
 
-        <p className="text-xs text-bege-muted mt-6 italic">
+        <p className="text-xs text-bege-muted mt-8">
           A Vinicôa promove o consumo moderado e responsável de vinho.
         </p>
       </div>

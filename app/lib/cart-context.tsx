@@ -35,12 +35,10 @@ interface CartContextType {
   shippingCost: number;
   total: number;
   totalItems: number;
-  freeShippingThreshold: number;
 }
 
 const CartContext = createContext<CartContextType | null>(null);
 
-const FREE_SHIPPING_THRESHOLD = 60.0;
 const STANDARD_SHIPPING = 5.9;
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -180,8 +178,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const shippingCost = useMemo(() => {
     if (cart.length === 0) return 0;
-    return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING;
-  }, [subtotal, cart.length]);
+    return STANDARD_SHIPPING;
+  }, [cart.length]);
 
   const total = useMemo(() => subtotal + shippingCost, [subtotal, shippingCost]);
 
@@ -213,7 +211,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         shippingCost,
         total,
         totalItems,
-        freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
       }}
     >
       {children}
