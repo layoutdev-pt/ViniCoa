@@ -44,7 +44,7 @@ export function WineDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start mb-16">
         {/* Imagem e Selo */}
-        <div data-reveal="left" className="glass-luxury rounded-3xl p-10 flex items-center justify-center relative border border-dourado/30">
+        <div data-reveal="left" className="glass-luxury rounded-3xl p-10 flex flex-col items-center justify-center gap-4 relative border border-dourado/30">
           <span className="absolute top-4 left-4 px-3.5 py-1 rounded-full bg-bordo text-bege text-xs uppercase font-bold tracking-widest border border-dourado/40">
             {wine.badge}
           </span>
@@ -53,6 +53,13 @@ export function WineDetail() {
             alt={wine.title}
             className="h-96 sm:h-[450px] object-contain drop-shadow-2xl"
           />
+          {wine.secondaryImage && (
+            <img
+              src={wine.secondaryImage}
+              alt={`${wine.title} — segunda fotografia`}
+              className="h-40 max-w-full object-contain drop-shadow-xl"
+            />
+          )}
         </div>
 
         {/* Dados Comerciais e Sensoriais */}
@@ -83,7 +90,7 @@ export function WineDetail() {
               <Trophy className="w-4 h-4 text-dourado" /> Prémios & Pontuações
             </h4>
             <ul className="text-xs text-bege space-y-1">
-              {wine.awards.map((award, i) => (
+              {(wine.awards ?? []).map((award, i) => (
                 <li key={i}>• {award}</li>
               ))}
             </ul>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router";
 import { Filter, Sliders, Wine as WineIcon } from "lucide-react";
 import { useCart } from "../lib/cart-context";
@@ -21,6 +21,10 @@ export function Shop() {
   const [maxPrice, setMaxPrice] = useState<number>(maxPricePossible);
   const [sortBy, setSortBy] = useState<string>("featured");
   const [isFilterBoxOpen, setIsFilterBoxOpen] = useState(false);
+
+  useEffect(() => {
+    setMaxPrice(maxPricePossible);
+  }, [maxPricePossible]);
 
   const availableYears = useMemo(() => {
     return Array.from(new Set(wines.map((w) => w.year))).sort().reverse();

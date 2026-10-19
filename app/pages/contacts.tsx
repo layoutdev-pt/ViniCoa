@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { WinePurchaseCTA } from "../components/ui/WinePurchaseCTA";
 import { GlobeSection } from "../components/ui/GlobeSection";
+import { isTurnstileConfigured, TurnstileField } from "../components/ui/TurnstileField";
 import penedosImg from "../assets/images/penedos-granito.jpg";
 
 export function meta() {
@@ -117,10 +118,13 @@ export function Contacts() {
   const [consent, setConsent] = useState(false);
   const [honeypot, setHoneypot] = useState("");
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
   const formRef = useRef<HTMLDivElement>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
-  const openedAt = useRef(Date.now());
 
   // Links como /contactos?assunto=horeca pré-selecionam o assunto
   useEffect(() => {
@@ -134,19 +138,42 @@ export function Contacts() {
     window.setTimeout(() => messageRef.current?.focus({ preventScroll: true }), 500);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Anti-spam: campo isco preenchido ou envio em menos de 3 s = bot. Ignora em silêncio.
-    const isBot = honeypot.trim() !== "" || Date.now() - openedAt.current < 3000;
-    if (!isBot) {
-      // Envio real (action + serviço de e-mail) ainda por ligar
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      const response = await fetch("/api/forms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          type: "contact",
+          name,
+          email,
+          phone,
+          subject: ASSUNTOS[subject],
+          message,
+          consent,
+          website: honeypot,
+          turnstileToken,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Não foi possível enviar a mensagem.");
+      setSent(true);
+      setName("");
+      setEmail("");
+      setPhone("");
+      setMessage("");
+      setConsent(false);
+      setHoneypot("");
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Não foi possível enviar a mensagem.");
+    } finally {
+      setTurnstileToken("");
+      setTurnstileResetKey((key) => key + 1);
+      setSubmitting(false);
     }
-    setSent(true);
-    setName("");
-    setEmail("");
-    setPhone("");
-    setMessage("");
-    setConsent(false);
   };
 
   return (
@@ -402,8 +429,11 @@ export function Contacts() {
                       </span>
                     </label>
 
-                    <button type="submit" className="btn-brand btn-bordo w-full !py-4">
-                      Enviar mensagem
+                    <TurnstileField key={turnstileResetKey} onToken={setTurnstileToken} resetKey={turnstileResetKey} />
+                    {submitError && <p className="text-sm text-red-300" role="alert">{submitError}</p>}
+
+                    <button type="submit" disabled={submitting || (import.meta.env.PROD && !isTurnstileConfigured) || (isTurnstileConfigured && !turnstileToken)} className="btn-brand btn-bordo w-full !py-4 disabled:opacity-50 disabled:cursor-wait">
+                      {submitting ? "A enviar…" : "Enviar mensagem"}
                     </button>
                   </form>
                 </>

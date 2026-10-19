@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useState, useMemo, type ReactNode } from "react";
 import type { CartItem } from "../types/wine";
-import { WINES_DATABASE } from "./wines";
+import { useAdmin } from "./admin-context";
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (wineId: number, qty?: number) => void;
-  updateCartItemQty: (wineId: number, delta: number) => void;
-  removeFromCart: (wineId: number) => void;
+  addToCart: (wineId: number | string, qty?: number) => void;
+  updateCartItemQty: (wineId: number | string, delta: number) => void;
+  removeFromCart: (wineId: number | string) => void;
   clearCart: () => void;
   
   isCartOpen: boolean;
@@ -17,8 +17,8 @@ interface CartContextType {
   openSearch: () => void;
   closeSearch: () => void;
 
-  quickViewWineId: number | null;
-  openQuickView: (wineId: number) => void;
+  quickViewWineId: number | string | null;
+  openQuickView: (wineId: number | string) => void;
   closeQuickView: () => void;
 
   isAgeVerified: boolean;
@@ -42,10 +42,11 @@ const CartContext = createContext<CartContextType | null>(null);
 const STANDARD_SHIPPING = 5.9;
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { wines } = useAdmin();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [quickViewWineId, setQuickViewWineId] = useState<number | null>(null);
+  const [quickViewWineId, setQuickViewWineId] = useState<number | string | null>(null);
   const [isAgeVerified, setIsAgeVerified] = useState(true); // default true for SSR, checked in useEffect
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [toast, setToast] = useState<{ message: string; withCartAction?: boolean } | null>(null);
@@ -94,7 +95,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const hideToast = () => setToast(null);
 
-  const addToCart = (wineId: number, qtyToAdd = 1) => {
+  const addToCart = (wineId: number | string, qtyToAdd = 1) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === wineId);
       let updated: CartItem[];
@@ -109,11 +110,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return updated;
     });
 
-    const wine = WINES_DATABASE.find((w) => w.id === wineId);
+    const wine = wines.find((w) => w.id === wineId);
     showToast(`${wine ? wine.title : "Vinho"} adicionado ao cesto!`, true);
   };
 
-  const updateCartItemQty = (wineId: number, delta: number) => {
+  const updateCartItemQty = (wineId: number | string, delta: number) => {
     setCart((prev) => {
       const updated = prev
         .map((item) => (item.id === wineId ? { ...item, qty: item.qty + delta } : item))
@@ -123,7 +124,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const removeFromCart = (wineId: number) => {
+  const removeFromCart = (wineId: number | string) => {
     setCart((prev) => {
       const updated = prev.filter((item) => item.id !== wineId);
       saveCartToStorage(updated);
@@ -142,7 +143,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const openSearch = () => setIsSearchOpen(true);
   const closeSearch = () => setIsSearchOpen(false);
 
-  const openQuickView = (wineId: number) => setQuickViewWineId(wineId);
+  const openQuickView = (wineId: number | string) => setQuickViewWineId(wineId);
   const closeQuickView = () => setQuickViewWineId(null);
 
   const verifyAge = () => {
@@ -171,10 +172,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const subtotal = useMemo(() => {
     return cart.reduce((acc, curr) => {
-      const wine = WINES_DATABASE.find((w) => w.id === curr.id);
+      const wine = wines.find((w) => w.id === curr.id);
       return acc + (wine ? wine.price * curr.qty : 0);
     }, 0);
-  }, [cart]);
+  }, [cart, wines]);
 
   const shippingCost = useMemo(() => {
     if (cart.length === 0) return 0;

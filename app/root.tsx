@@ -49,8 +49,8 @@ export default function App() {
         />
       </head>
       <body className="relative antialiased selection:bg-bordo selection:text-dourado min-h-screen flex flex-col justify-between">
-        <CartProvider>
-          <AdminProvider>
+        <AdminProvider>
+          <CartProvider>
             {!isAdmin && <AgeGateModal />}
             {!isAdmin && <CookieBanner />}
             {!isAdmin && <WhatsAppWidget />}
@@ -65,8 +65,8 @@ export default function App() {
             </main>
             {!isAdmin && <SecurePurchaseSection />}
             {!isAdmin && <Footer />}
-          </AdminProvider>
-        </CartProvider>
+          </CartProvider>
+        </AdminProvider>
 
         <ScrollRestoration />
         <Scripts />

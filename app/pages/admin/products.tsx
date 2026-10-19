@@ -84,14 +84,9 @@ interface WineFormData {
   acidez: number;
   featuredHome: boolean;
   image: string;
+  secondaryImage: string;
+  paymentUrl: string;
 }
-
-const DEFAULT_PRESETS = [
-  { label: "Reserva Tinto", url: "https://images.unsplash.com/photo-1586370434639-0fe43b2d32e6?auto=format&fit=crop&w=500&q=80" },
-  { label: "Branco Altitude", url: "https://images.unsplash.com/photo-1558001373-a2613faee3bb?auto=format&fit=crop&w=500&q=80" },
-  { label: "Grande Reserva", url: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=500&q=80" },
-  { label: "Rosé Elegance", url: "https://images.unsplash.com/photo-1569919659476-f0852f6834b7?auto=format&fit=crop&w=500&q=80" },
-];
 
 export default function AdminProductsPage() {
   const { wines, addWine, updateWine, deleteWine, toggleFeatured } = useAdmin();
@@ -107,10 +102,12 @@ export default function AdminProductsPage() {
 
   // Modais & Alertas
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingWineId, setEditingWineId] = useState<number | null>(null);
+  const [editingWineId, setEditingWineId] = useState<Wine["id"] | null>(null);
   const [wineToDelete, setWineToDelete] = useState<Wine | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [priceError, setPriceError] = useState<string | null>(null);
+  const [primaryImageFile, setPrimaryImageFile] = useState<File | null>(null);
+  const [secondaryImageFile, setSecondaryImageFile] = useState<File | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -139,7 +136,9 @@ export default function AdminProductsPage() {
     taninos: 75,
     acidez: 70,
     featuredHome: true,
-    image: DEFAULT_PRESETS[0].url,
+    image: "",
+    secondaryImage: "",
+    paymentUrl: "",
   });
 
   // Abrir modal se vier via query param ?novo=true
@@ -153,6 +152,8 @@ export default function AdminProductsPage() {
   const openAddModal = () => {
     setEditingWineId(null);
     setPriceError(null);
+    setPrimaryImageFile(null);
+    setSecondaryImageFile(null);
     setFormData({
       title: "",
       category: "Vinhos",
@@ -174,7 +175,9 @@ export default function AdminProductsPage() {
       taninos: 70,
       acidez: 65,
       featuredHome: false,
-      image: DEFAULT_PRESETS[0].url,
+      image: "",
+      secondaryImage: "",
+      paymentUrl: "",
     });
     setIsModalOpen(true);
   };
@@ -182,6 +185,8 @@ export default function AdminProductsPage() {
   const openEditModal = (wine: Wine) => {
     setEditingWineId(wine.id);
     setPriceError(null);
+    setPrimaryImageFile(null);
+    setSecondaryImageFile(null);
 
     const isKnownYear = HARVEST_YEARS.includes(wine.year as any);
     const isKnownVolume = CAPACITIES.includes(wine.volume as any);
@@ -207,7 +212,9 @@ export default function AdminProductsPage() {
       taninos: wine.taninos || 70,
       acidez: wine.acidez || 65,
       featuredHome: wine.featuredHome ?? false,
-      image: wine.image || DEFAULT_PRESETS[0].url,
+      image: wine.image || "",
+      secondaryImage: wine.secondaryImage || "",
+      paymentUrl: wine.paymentUrl || "",
     });
     setIsModalOpen(true);
   };
@@ -224,7 +231,7 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
 
@@ -260,25 +267,40 @@ export default function AdminProductsPage() {
       taninos: Number(formData.taninos),
       acidez: Number(formData.acidez),
       featuredHome: formData.featuredHome,
-      image: formData.image.trim() || DEFAULT_PRESETS[0].url,
+      image: formData.image.trim(),
+      secondaryImage: formData.secondaryImage.trim(),
+      paymentUrl: formData.paymentUrl.trim(),
     };
 
-    if (editingWineId !== null) {
-      updateWine(editingWineId, winePayload);
-      showToast(`Vinho "${winePayload.title}" atualizado.`);
-    } else {
-      addWine(winePayload);
-      showToast(`Vinho "${winePayload.title}" criado.`);
+    try {
+      if (editingWineId !== null) {
+        await updateWine(editingWineId, winePayload, {
+          primary: primaryImageFile || undefined,
+          secondary: secondaryImageFile || undefined,
+        });
+        showToast(`Produto "${winePayload.title}" atualizado.`);
+      } else {
+        await addWine(winePayload, {
+          primary: primaryImageFile || undefined,
+          secondary: secondaryImageFile || undefined,
+        });
+        showToast(`Produto "${winePayload.title}" criado.`);
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Não foi possível guardar o produto.");
     }
-
-    setIsModalOpen(false);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!wineToDelete) return;
-    deleteWine(wineToDelete.id);
-    showToast(`Vinho "${wineToDelete.title}" removido.`);
-    setWineToDelete(null);
+    try {
+      await deleteWine(wineToDelete.id);
+      showToast(`Produto "${wineToDelete.title}" removido.`);
+      setWineToDelete(null);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Não foi possível remover o produto.");
+    }
   };
 
   // Filtragem
@@ -553,7 +575,9 @@ export default function AdminProductsPage() {
                       <td className="py-3.5 px-4 text-center">
                         <button
                           type="button"
-                          onClick={() => toggleFeatured(wine.id)}
+                          onClick={() => void toggleFeatured(wine.id).catch((error) =>
+                            showToast(error instanceof Error ? error.message : "Não foi possível atualizar o destaque.")
+                          )}
                           className={`px-3 py-1 rounded-lg text-xs font-sans transition-all cursor-pointer inline-flex items-center gap-1.5 ${
                             wine.featuredHome
                               ? "bg-[#C49A4A]/15 text-[#C49A4A] border border-[#C49A4A]/30 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30"
@@ -902,6 +926,62 @@ export default function AdminProductsPage() {
                   placeholder="Vinho aromático com estágio em madeira nobre..."
                   className="w-full px-3.5 py-2 rounded-xl bg-black/40 border border-white/10 text-white focus:outline-none focus:border-white/30 resize-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-white/70 mb-1.5 font-medium">
+                  Fotografia principal * <span className="text-white/40">(aparece no carrossel)</span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  required={editingWineId === null && !formData.image}
+                  onChange={(e) => setPrimaryImageFile(e.target.files?.[0] || null)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:text-white"
+                />
+                <p className="mt-1 text-[11px] text-white/40">JPG, PNG, WebP ou AVIF · máximo 5 MB.</p>
+                {primaryImageFile ? (
+                  <p className="mt-1 text-[11px] text-[#C49A4A]">Nova fotografia: {primaryImageFile.name}</p>
+                ) : formData.image ? (
+                  <img src={formData.image} alt="Fotografia principal atual" className="mt-2 h-24 rounded-lg object-contain bg-black/30 p-2" />
+                ) : null}
+              </div>
+
+              <div>
+                <label className="block text-white/70 mb-1.5 font-medium">
+                  Segunda fotografia <span className="text-white/40">(opcional)</span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  onChange={(e) => setSecondaryImageFile(e.target.files?.[0] || null)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:text-white"
+                />
+                <p className="mt-1 text-[11px] text-white/40">JPG, PNG, WebP ou AVIF · máximo 5 MB.</p>
+                {secondaryImageFile ? (
+                  <p className="mt-1 text-[11px] text-[#C49A4A]">Nova fotografia: {secondaryImageFile.name}</p>
+                ) : formData.secondaryImage ? (
+                  <img src={formData.secondaryImage} alt="Segunda fotografia atual" className="mt-2 h-24 rounded-lg object-contain bg-black/30 p-2" />
+                ) : null}
+              </div>
+
+              <div>
+                <label className="block text-white/70 mb-1.5 font-medium">
+                  Link de pagamento Vendus
+                </label>
+                <input
+                  type="url"
+                  inputMode="url"
+                  value={formData.paymentUrl}
+                  onChange={(e) =>
+                    setFormData({ ...formData, paymentUrl: e.target.value })
+                  }
+                  placeholder="https://..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white focus:outline-none focus:border-[#C49A4A] transition"
+                />
+                <p className="mt-1 text-[11px] text-white/40">
+                  Opcional. O servidor só aceita links HTTPS.
+                </p>
               </div>
 
               {/* 6. Destaque no Carrossel da Home */}

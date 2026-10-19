@@ -1,9 +1,11 @@
 import { ShoppingBag, X, Trash2, Lock, CreditCard } from "lucide-react";
 import { Link } from "react-router";
 import { useCart } from "../../lib/cart-context";
-import { WINES_DATABASE, formatMoney } from "../../lib/wines";
+import { useAdmin } from "../../lib/admin-context";
+import { formatMoney } from "../../lib/wines";
 
 export function CartDrawer() {
+  const { wines } = useAdmin();
   const {
     cart,
     isCartOpen,
@@ -57,28 +59,28 @@ export function CartDrawer() {
                   <p className="text-sm mb-4">O seu cesto está vazio.</p>
                   
                   {/* Sugestão de Destaque */}
-                  <div className="text-left p-3.5 rounded-xl bg-white/5 border border-dourado/20 mb-4">
+                  {wines[0] && <div className="text-left p-3.5 rounded-xl bg-white/5 border border-dourado/20 mb-4">
                     <span className="text-[10px] uppercase tracking-wider text-dourado font-bold block mb-1">
                       Mais Procurado
                     </span>
                     <div className="flex items-center gap-3">
                       <img
-                        src={WINES_DATABASE[0].image}
-                        alt={WINES_DATABASE[0].title}
+                        src={wines[0].image}
+                        alt={wines[0].title}
                         className="w-9 h-14 object-contain bg-white/5 rounded p-0.5"
                       />
                       <div className="flex-1">
-                        <h4 className="text-xs font-bold text-bege">{WINES_DATABASE[0].title}</h4>
-                        <span className="text-xs font-bold text-dourado">{formatMoney(WINES_DATABASE[0].price)}</span>
+                        <h4 className="text-xs font-bold text-bege">{wines[0].title}</h4>
+                        <span className="text-xs font-bold text-dourado">{formatMoney(wines[0].price)}</span>
                       </div>
                       <button
-                        onClick={() => addToCart(WINES_DATABASE[0].id)}
+                        onClick={() => addToCart(wines[0].id)}
                         className="px-2.5 py-1.5 rounded-lg bg-bordo hover:bg-bordo-light text-bege text-xs font-bold uppercase transition cursor-pointer"
                       >
                         + Adicionar
                       </button>
                     </div>
-                  </div>
+                  </div>}
 
                   <Link
                     to="/vinhos"
@@ -90,7 +92,7 @@ export function CartDrawer() {
                 </div>
               ) : (
                 cart.map((item) => {
-                  const wine = WINES_DATABASE.find((w) => w.id === item.id);
+                  const wine = wines.find((w) => w.id === item.id);
                   if (!wine) return null;
                   const itemTotal = wine.price * item.qty;
 

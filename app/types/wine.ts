@@ -22,7 +22,7 @@ export type WineCategory =
   | string;
 
 export interface Wine {
-  id: number;
+  id: number | string;
   slug: string;
   title: string;
   color: WineType;
@@ -33,6 +33,7 @@ export interface Wine {
   price: number;
   badge?: string;
   image: string;
+  secondaryImage?: string;
   grapes: string;
   desc: string;
   corpo: number; // 0-100
@@ -42,9 +43,10 @@ export interface Wine {
   awards?: string[];
   stock: number;
   featuredHome?: boolean;
+  paymentUrl?: string;
 }
 
 export interface CartItem {
-  id: number;
+  id: number | string;
   qty: number;
 }

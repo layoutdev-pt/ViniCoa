@@ -1,8 +1,29 @@
-import { useRef, useState } from "react";
-import { Star, CheckCircle2, Info } from "lucide-react";
-import { REVIEWS, ratingSummary } from "../lib/reviews";
+import { useState, useRef, useEffect } from "react";
+import { data, useLoaderData } from "react-router";
+import type { Route } from "./+types/avaliacoes";
+import { Star, CheckCircle2, ChevronDown, Check } from "lucide-react";
+import { ratingSummary, type Review } from "../lib/reviews";
 import { WINES_DATABASE } from "../lib/wines";
+import { createSupabaseServerClient } from "../lib/supabase.server";
+import { isTurnstileConfigured, TurnstileField } from "../components/ui/TurnstileField";
 import uvasImg from "../assets/images/uvas-orvalho.jpg";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const { supabase, headers } = createSupabaseServerClient(request);
+  const [{ data: reviews, error: reviewError }, { data: products, error: productError }] = await Promise.all([
+    supabase
+      .from("reviews")
+      .select("id, display_name, rating, title, body, created_at, products(name)")
+      .eq("status", "published")
+      .order("created_at", { ascending: false }),
+    supabase.from("products").select("id, slug, name").eq("is_active", true).order("name"),
+  ]);
+  if (reviewError || productError) {
+    console.error("Public reviews load failed:", reviewError ?? productError);
+    return data({ reviews: [], products: [] }, { headers });
+  }
+  return data({ reviews: reviews ?? [], products: products ?? [] }, { headers });
+}
 
 export function meta() {
   return [
@@ -41,41 +62,120 @@ const labelClass = "block font-downey text-[11px] uppercase tracking-[0.24em] te
 const LABELS = ["", "Fraco", "Razoável", "Bom", "Muito bom", "Excelente"];
 
 export function Avaliacoes() {
-  const { total, media, counts } = ratingSummary(REVIEWS);
-  const temExemplos = REVIEWS.some((r) => r.exemplo);
+  const { reviews: reviewRows, products } = useLoaderData<typeof loader>();
+  const reviews: Review[] = reviewRows.map((row) => ({
+    id: row.id,
+    nome: row.display_name,
+    localidade: "",
+    data: row.created_at.slice(0, 10),
+    estrelas: row.rating as Review["estrelas"],
+    titulo: row.title,
+    texto: row.body,
+    vinho: (() => {
+      const relatedProduct = row.products as unknown as { name: string } | { name: string }[] | null;
+      return Array.isArray(relatedProduct) ? relatedProduct[0]?.name : relatedProduct?.name;
+    })(),
+  }));
+  const { total, media, counts } = ratingSummary(reviews);
 
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
-  const [vinho, setVinho] = useState("");
+  const [tipoAvaliacao, setTipoAvaliacao] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [titulo, setTitulo] = useState("");
   const [texto, setTexto] = useState("");
   const [consent, setConsent] = useState(false);
   const [honeypot, setHoneypot] = useState("");
   const [ratingError, setRatingError] = useState(false);
   const [sent, setSent] = useState(false);
-  const openedAt = useRef(Date.now());
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Lista de vinhos disponíveis (Supabase ou fallback de base de dados local)
+  const wineList = products && products.length > 0
+    ? products
+    : WINES_DATABASE.map((w) => ({ id: String(w.id), slug: w.slug, name: w.title }));
+
+  const generalTypes = [
+    { value: "", label: "Avaliação geral da loja" },
+    { value: "enoturismo", label: "Enoturismo e visitas à adega" },
+    { value: "entrega", label: "Envio e entrega" },
+    { value: "atendimento", label: "Atendimento e apoio ao cliente" },
+  ];
+
+  const currentLabel =
+    wineList.find((w) => w.slug === tipoAvaliacao)?.name ||
+    generalTypes.find((g) => g.value === tipoAvaliacao)?.label ||
+    "Avaliação geral da loja";
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDropdownOpen(false);
+    };
+    if (dropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [dropdownOpen]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!rating) {
       setRatingError(true);
       return;
     }
-    // Anti-spam: campo isco preenchido ou envio em menos de 3 s = bot. Ignora em silêncio.
-    const isBot = honeypot.trim() !== "" || Date.now() - openedAt.current < 3000;
-    if (!isBot) {
-      // Envio real (gravação + moderação) ainda por ligar
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      const isWineSlug = wineList.some((w) => w.slug === tipoAvaliacao);
+      const response = await fetch("/api/forms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          type: "review",
+          name: nome,
+          email,
+          rating,
+          title: titulo,
+          body: texto,
+          productSlug: isWineSlug ? tipoAvaliacao : undefined,
+          consent,
+          website: honeypot,
+          turnstileToken,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Não foi possível enviar a avaliação.");
+      setSent(true);
+      setRating(0);
+      setNome("");
+      setEmail("");
+      setTipoAvaliacao("");
+      setTitulo("");
+      setTexto("");
+      setConsent(false);
+      setHoneypot("");
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Não foi possível enviar a avaliação.");
+    } finally {
+      setTurnstileToken("");
+      setTurnstileResetKey((key) => key + 1);
+      setSubmitting(false);
     }
-    setSent(true);
-    setRating(0);
-    setNome("");
-    setEmail("");
-    setVinho("");
-    setTitulo("");
-    setTexto("");
-    setConsent(false);
   };
 
   const shown = hover || rating;
@@ -149,19 +249,11 @@ export function Avaliacoes() {
             <h2 className="font-brand uppercase text-4xl sm:text-5xl text-bege tracking-[0.05em]">O que nos dizem</h2>
           </div>
 
-          {temExemplos && (
-            <p className="max-w-3xl mx-auto mb-10 flex items-start gap-3 rounded-2xl border border-dourado/40 bg-vinicoa-charcoal px-5 py-4 text-sm text-bege-dark">
-              <Info className="w-4 h-4 text-dourado shrink-0 mt-0.5" strokeWidth={1.5} />
-              Avaliações de exemplo, apenas para pré-visualizar o layout. Substituir por avaliações reais de clientes
-              antes de publicar o site.
-            </p>
-          )}
-
           {total === 0 ? (
             <p className="text-center text-base text-bege-dark">Ainda não há avaliações. Seja o primeiro a partilhar a sua.</p>
           ) : (
             <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {REVIEWS.map((r, i) => (
+              {reviews.map((r, i) => (
                 <li
                   key={r.id}
                   data-reveal
@@ -180,7 +272,7 @@ export function Avaliacoes() {
                   <p className="text-base text-bege-dark leading-relaxed mb-6">{r.texto}</p>
                   <div className="mt-auto pt-5 border-t border-dourado/20">
                     <p className="text-sm text-bege">
-                      {r.nome} <span className="text-bege-muted">· {r.localidade}</span>
+                      {r.nome}{r.localidade && <span className="text-bege-muted"> · {r.localidade}</span>}
                     </p>
                     <p className="text-xs text-bege-muted mt-1">
                       {formatDate(r.data)}
@@ -226,7 +318,7 @@ export function Avaliacoes() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Seletor de estrelas */}
                 <fieldset className="text-center">
-                  <legend className={`${labelClass} mx-auto`}>Classificação *</legend>
+                  <legend className={`${labelClass} mx-auto`}>Classificação</legend>
                   <div className="flex justify-center gap-2" onMouseLeave={() => setHover(0)}>
                     {[1, 2, 3, 4, 5].map((n) => (
                       <label
@@ -296,18 +388,101 @@ export function Avaliacoes() {
                   </div>
                 </div>
 
-                <div>
-                  <label htmlFor="av-vinho" className={labelClass}>
-                    Vinho
+                {/* TIPO DE AVALIAÇÃO — equilíbrio elegante entre minimalismo e personalização */}
+                <div ref={dropdownRef} className="relative">
+                  <label id="av-tipo-label" className={labelClass}>
+                    Tipo de avaliação
                   </label>
-                  <select id="av-vinho" value={vinho} onChange={(e) => setVinho(e.target.value)} className={inputClass}>
-                    <option value="">Avaliação geral da loja</option>
-                    {WINES_DATABASE.map((w) => (
-                      <option key={w.id} value={w.title}>
-                        {w.title}
-                      </option>
-                    ))}
-                  </select>
+
+                  {/* Gatilho customizado discreto, idêntico aos outros inputs */}
+                  <button
+                    id="av-tipo"
+                    type="button"
+                    onClick={() => setDropdownOpen((prev) => !prev)}
+                    aria-expanded={dropdownOpen}
+                    aria-haspopup="listbox"
+                    aria-labelledby="av-tipo-label"
+                    className={`${inputClass} text-left flex items-center justify-between cursor-pointer transition-all ${
+                      dropdownOpen ? "border-dourado ring-1 ring-dourado/40" : "hover:border-dourado/50"
+                    }`}
+                  >
+                    <span className="truncate text-bege">{currentLabel}</span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-dourado/70 transition-transform duration-200 shrink-0 ml-2 ${
+                        dropdownOpen ? "rotate-180 text-dourado" : ""
+                      }`}
+                      strokeWidth={1.5}
+                    />
+                  </button>
+
+                  {/* Menu suspenso estilizado (sem parecer a select nativa do Google) */}
+                  {dropdownOpen && (
+                    <div
+                      className="absolute top-full left-0 right-0 mt-1.5 z-40 rounded-xl bg-[#141012] border border-dourado/30 shadow-xl shadow-black/80 backdrop-blur-md overflow-hidden py-1.5 max-h-60 overflow-y-auto"
+                      role="listbox"
+                    >
+                      {/* Âmbito Geral */}
+                      <div className="px-3.5 py-1 text-[10px] font-downey uppercase tracking-[0.2em] text-dourado/60">
+                        Âmbito Geral
+                      </div>
+                      {generalTypes.map((item) => {
+                        const isSelected = tipoAvaliacao === item.value;
+                        return (
+                          <button
+                            key={item.value}
+                            type="button"
+                            role="option"
+                            aria-selected={isSelected}
+                            onClick={() => {
+                              setTipoAvaliacao(item.value);
+                              setDropdownOpen(false);
+                            }}
+                            className={`w-full px-4 py-2.5 text-left text-sm flex items-center justify-between transition-colors cursor-pointer ${
+                              isSelected
+                                ? "text-dourado bg-dourado/10 font-medium"
+                                : "text-bege/85 hover:text-dourado hover:bg-white/[0.04]"
+                            }`}
+                          >
+                            <span className="truncate">{item.label}</span>
+                            {isSelected && <Check className="w-3.5 h-3.5 text-dourado shrink-0 ml-2" />}
+                          </button>
+                        );
+                      })}
+
+                      {/* Vinhos da Garrafeira */}
+                      {wineList.length > 0 && (
+                        <>
+                          <div className="border-t border-white/[0.06] my-1" />
+                          <div className="px-3.5 py-1 text-[10px] font-downey uppercase tracking-[0.2em] text-dourado/60">
+                            Vinhos da Garrafeira
+                          </div>
+                          {wineList.map((wine) => {
+                            const isSelected = tipoAvaliacao === wine.slug;
+                            return (
+                              <button
+                                key={wine.id}
+                                type="button"
+                                role="option"
+                                aria-selected={isSelected}
+                                onClick={() => {
+                                  setTipoAvaliacao(wine.slug);
+                                  setDropdownOpen(false);
+                                }}
+                                className={`w-full px-4 py-2.5 text-left text-sm flex items-center justify-between transition-colors cursor-pointer ${
+                                  isSelected
+                                    ? "text-dourado bg-dourado/10 font-medium"
+                                    : "text-bege/85 hover:text-dourado hover:bg-white/[0.04]"
+                                }`}
+                              >
+                                <span className="truncate">{wine.name}</span>
+                                {isSelected && <Check className="w-3.5 h-3.5 text-dourado shrink-0 ml-2" />}
+                              </button>
+                            );
+                          })}
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -371,8 +546,11 @@ export function Avaliacoes() {
                   </span>
                 </label>
 
-                <button type="submit" className="btn-brand btn-bordo w-full !py-4">
-                  Enviar avaliação
+                <TurnstileField key={turnstileResetKey} onToken={setTurnstileToken} resetKey={turnstileResetKey} />
+                {submitError && <p className="text-sm text-red-300" role="alert">{submitError}</p>}
+
+                <button type="submit" disabled={submitting || (import.meta.env.PROD && !isTurnstileConfigured) || (isTurnstileConfigured && !turnstileToken)} className="btn-brand btn-bordo w-full !py-4 disabled:opacity-50 disabled:cursor-wait">
+                  {submitting ? "A enviar…" : "Enviar avaliação"}
                 </button>
               </form>
             </>

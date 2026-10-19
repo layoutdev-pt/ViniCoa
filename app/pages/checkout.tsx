@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { CheckCircle2, ShoppingBag, CreditCard, Lock, Smartphone } from "lucide-react";
 import { useCart } from "../lib/cart-context";
-import { WINES_DATABASE, formatMoney } from "../lib/wines";
+import { formatMoney } from "../lib/wines";
+import { useAdmin } from "../lib/admin-context";
 
 export function Checkout() {
+  const { wines } = useAdmin();
   const { cart, subtotal, shippingCost, total, clearCart, addToCart } = useCart();
   const [payMethod, setPayMethod] = useState<"mbway" | "card" | "wallets">("mbway");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -45,7 +47,7 @@ export function Checkout() {
   }
 
   if (cart.length === 0) {
-    const recommended = WINES_DATABASE.slice(0, 2);
+    const recommended = wines.slice(0, 2);
     return (
       <div className="pt-36 sm:pt-40 md:pt-44 pb-24 px-6 max-w-3xl mx-auto text-center">
         <ShoppingBag className="w-14 h-14 text-dourado/40 mx-auto mb-4" />
@@ -360,7 +362,7 @@ export function Checkout() {
           </h3>
           <div className="space-y-3 max-h-60 overflow-y-auto">
             {cart.map((item) => {
-              const w = WINES_DATABASE.find((x) => x.id === item.id);
+              const w = wines.find((x) => x.id === item.id);
               if (!w) return null;
               return (
                 <div key={item.id} className="flex items-center justify-between text-xs">

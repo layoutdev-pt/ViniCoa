@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, NavLink, useLocation } from "react-router";
+import { Form, Link, NavLink, useLocation } from "react-router";
 import {
   LayoutDashboard,
   Wine,
@@ -7,6 +7,7 @@ import {
   ExternalLink,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
 import logoOriginal from "../../assets/logos/logo_original.svg";
 import { useAdmin } from "../../lib/admin-context";
@@ -19,7 +20,7 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children, title, subtitle, action }: AdminLayoutProps) {
-  const { wines, admins } = useAdmin();
+  const { wines, admins, catalogStatus } = useAdmin();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -125,15 +126,12 @@ export function AdminLayout({ children, title, subtitle, action }: AdminLayoutPr
           </Link>
 
           <div className="flex items-center gap-3 pt-2 border-t border-white/[0.04]">
-            <div className="w-9 h-9 rounded-full bg-[#6B0015] flex items-center justify-center font-brand text-xs text-white shrink-0">
-              MF
-            </div>
             <div className="min-w-0">
               <span className="block text-sm text-white truncate font-sans font-medium">
-                Miguel Fernandes
+                Conta autenticada
               </span>
               <span className="text-xs text-white/40 block font-sans truncate">
-                Super Admin
+                Administrador
               </span>
             </div>
           </div>
@@ -169,12 +167,30 @@ export function AdminLayout({ children, title, subtitle, action }: AdminLayoutPr
 
           <div className="flex items-center gap-3">
             {action && <div>{action}</div>}
+            <Form method="post" action="/admin/logout">
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60 hover:border-white/20 hover:text-white transition"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Sair
+              </button>
+            </Form>
           </div>
         </header>
 
         {/* CONTEÚDO */}
         <main className="flex-1 p-6 lg:p-10 max-w-6xl w-full mx-auto">
-          {children}
+          {catalogStatus === "loading" ? (
+            <p role="status" className="py-16 text-center text-sm text-white/50 font-sans">
+              A carregar catálogo do Supabase…
+            </p>
+          ) : catalogStatus === "error" ? (
+            <div role="alert" className="mx-auto max-w-xl rounded-2xl border border-red-400/20 bg-red-500/5 p-6 text-center">
+              <p className="text-sm text-red-200">Não foi possível carregar o catálogo do Supabase.</p>
+              <p className="mt-2 text-xs text-white/45">Confirma se a migração do catálogo foi aplicada e se as variáveis do Supabase estão configuradas no servidor.</p>
+            </div>
+          ) : children}
         </main>
       </div>
 

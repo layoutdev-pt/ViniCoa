@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import { Plus, ArrowRight, Check, Sparkles } from "lucide-react";
 import { AdminLayout } from "../../components/admin/AdminLayout";
@@ -6,6 +7,16 @@ import { formatMoney } from "../../lib/wines";
 
 export default function AdminDashboard() {
   const { wines, toggleFeatured, featuredCount } = useAdmin();
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const removeFeatured = async (id: string | number) => {
+    setActionError(null);
+    try {
+      await toggleFeatured(id);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Não foi possível atualizar o destaque.");
+    }
+  };
 
   const totalStock = wines.reduce((acc, w) => acc + (w.stock || 0), 0);
   const featuredWines = wines.filter((w) => w.featuredHome);
@@ -25,6 +36,11 @@ export default function AdminDashboard() {
       }
     >
       <div className="space-y-12">
+        {actionError && (
+          <p role="alert" className="rounded-xl border border-red-400/20 bg-red-500/5 px-4 py-3 text-xs text-red-200">
+            {actionError}
+          </p>
+        )}
         {/* RESUMO EM 3 NÚMEROS LIMPOS */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div className="p-6 rounded-2xl bg-[#121112] border border-white/[0.06]">
@@ -123,7 +139,7 @@ export default function AdminDashboard() {
                     {/* Botão simples para remover do carrossel */}
                     <button
                       type="button"
-                      onClick={() => toggleFeatured(wine.id)}
+                      onClick={() => void removeFeatured(wine.id)}
                       className="px-3 py-1.5 rounded-lg border border-[#C49A4A]/30 text-[#C49A4A] hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 text-xs font-sans transition cursor-pointer flex items-center gap-1.5"
                       title="Clique para retirar do carrossel"
                     >

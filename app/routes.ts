@@ -10,8 +10,15 @@ export default [
   route("avaliacoes", "pages/avaliacoes.tsx"),
   route("contactos", "pages/contacts.tsx"),
   route("checkout", "pages/checkout.tsx"),
-  // Painel de Administração
-  route("admin", "pages/admin/dashboard.tsx"),
-  route("admin/produtos", "pages/admin/products.tsx"),
-  route("admin/admins", "pages/admin/admins.tsx"),
+  route("api/catalog", "pages/api/catalog.ts"),
+  route("api/forms", "pages/api/forms.ts"),
+  // Autenticação pública do painel e rotas protegidas por sessão + role admin.
+  route("admin/login", "pages/admin/login.tsx"),
+  route("admin/logout", "pages/admin/logout.tsx"),
+  route("admin", "pages/admin/protected-layout.tsx", [
+    index("pages/admin/dashboard.tsx"),
+    route("produtos", "pages/admin/products.tsx"),
+    route("admins", "pages/admin/admins.tsx"),
+    route("api/products", "pages/api/products.ts"),
+  ]),
 ] satisfies RouteConfig;

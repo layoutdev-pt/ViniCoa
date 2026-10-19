@@ -1,0 +1,13 @@
+import { redirect } from "react-router";
+import type { Route } from "./+types/logout";
+import { createSupabaseServerClient } from "../../lib/supabase.server";
+
+export async function action({ request }: Route.ActionArgs) {
+  const { supabase, headers } = createSupabaseServerClient(request);
+  await supabase.auth.signOut();
+  return redirect("/admin/login", { headers });
+}
+
+export async function loader() {
+  return redirect("/admin/login");
+}

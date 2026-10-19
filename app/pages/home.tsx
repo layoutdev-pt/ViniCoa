@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { Sliders, ArrowLeft, ArrowRight } from "lucide-react";
 import { useCart } from "../lib/cart-context";
 import { useAdmin } from "../lib/admin-context";
-import { formatMoney } from "../lib/wines";
+import { formatMoney, WINES_DATABASE } from "../lib/wines";
 import { BrandStoryBento } from "../components/ui/BrandStoryBento";
 import { WinePurchaseCTA } from "../components/ui/WinePurchaseCTA";
 import { GlobeSection } from "../components/ui/GlobeSection";
@@ -16,18 +16,12 @@ export function Home() {
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   // Vinhos em Destaque no Carrossel da Home geridos pelo Admin (ou primeiros vinhos como fallback)
-  const featuredWines = wines.filter((w) => w.featuredHome).length > 0
+  const featuredWines = wines.some((w) => w.featuredHome)
     ? wines.filter((w) => w.featuredHome)
-    : wines.slice(0, 5);
+    : wines.length > 0 ? wines.slice(0, 5) : WINES_DATABASE.slice(0, 5);
   const totalWines = featuredWines.length;
 
-  // 3 Vinhos de Assinatura para o Seletor da Hero (Opção 1 + C)
-  const heroWines = featuredWines.slice(0, 3);
-  const [heroIdx, setHeroIdx] = useState(0);
-
-  const safeHeroIdx = Math.min(heroIdx, Math.max(0, heroWines.length - 1));
   const safeCurrentIdx = Math.min(currentIdx, Math.max(0, totalWines - 1));
-  const activeHero = heroWines[safeHeroIdx] || featuredWines[0];
   const activeWine = featuredWines[safeCurrentIdx] || featuredWines[0];
 
   const nextSlide = () => setCurrentIdx((prev) => (prev + 1) % totalWines);
@@ -62,226 +56,83 @@ export function Home() {
 
   return (
     <div className="w-full">
-      {/* HERO — ELEGÂNCIA, GARRAFA DE ASSINATURA & SELETOR DE PRESTÍGIO (OPÇÃO 1 + C) */}
-      <section className="relative min-h-[94vh] flex items-center overflow-hidden bg-[#0D0B0C] pt-28 pb-16 lg:pt-36 lg:pb-24">
-        {/* Imagem de Fundo (Barrica) com Ambient Glow e Zoom Lento Contínuo */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <img
-            src={barricaImg}
-            alt="Barricas de carvalho e adega no Sabugal"
-            className="w-full h-full object-cover img-mono opacity-25 scale-105 transition-transform duration-[20000ms] ease-out motion-reduce:transform-none"
-          />
-          {/* Luz dourada de altitude nas vinhas e halo granítico */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(196,154,74,0.18)_0%,rgba(13,11,12,0.85)_65%)]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-vinicoa-noir/80 via-transparent to-vinicoa-noir" />
-        </div>
+      {/* HERO — narrativa editorial com destaque de produto */}
+      <section className="relative min-h-[92vh] flex items-center overflow-hidden bg-[#0D0B0C]">
+        <img
+          src={barricaImg}
+          alt="Barrica de carvalho envelhecida"
+          className="absolute inset-0 w-full h-full object-cover img-mono opacity-35"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(13,11,12,0.94)_0%,rgba(13,11,12,0.78)_48%,rgba(13,11,12,0.58)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_78%_46%,rgba(196,154,74,0.12)_0%,transparent_38%)]" />
 
-        <div className="relative w-full max-w-7xl mx-auto px-6 lg:px-12 z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
-            
-            {/* COLUNA ESQUERDA: Tipografia Editorial, História & Mini-Painel de Vinho */}
-            <div className="lg:col-span-7 flex flex-col items-start text-left">
-              {/* Badge da Região & Altitude */}
-              <div
-                data-reveal="fade"
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-dourado/10 border border-dourado/30 mb-6"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-dourado animate-pulse" />
-                <span className="font-downey text-[10px] sm:text-[11px] uppercase tracking-[0.35em] text-dourado">
-                  Vinicôa · Sabugal | Beira Interior
-                </span>
-              </div>
+        <div className="relative w-full max-w-7xl mx-auto px-6 lg:px-12 pt-36 pb-24 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          <div className="lg:col-span-7 xl:col-span-7">
+            <p data-reveal="fade" className="inline-flex items-center gap-2 font-downey text-[10px] sm:text-xs uppercase tracking-[0.38em] text-dourado mb-7 px-3.5 py-2 rounded-full border border-dourado/30 bg-black/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-dourado" /> Vinicôa <span className="text-bege/40">|</span> Sabugal · Beira Interior
+            </p>
+            <h1 data-reveal data-reveal-delay="1" className="font-brand uppercase text-4xl sm:text-5xl xl:text-6xl leading-[1.08] tracking-[0.11em] max-w-3xl">
+              <span className="text-dourado">Elegância, carácter</span>
+              <br /><span className="text-[#E8DCC6]">e tradição</span>
+            </h1>
+            <span data-reveal="zoom" data-reveal-delay="2" className="block w-16 h-px bg-dourado/70 my-7" aria-hidden="true" />
+            <p data-reveal data-reveal-delay="3" className="text-sm sm:text-base font-light text-bege/75 leading-relaxed max-w-xl">
+              Uma garrafeira com raízes no Sabugal: vinhos de vários produtores e regiões, escolhidos com critério e enviados para todo o mundo.
+            </p>
 
-              {/* Título Principal de Autor */}
-              <h1
-                data-reveal
-                data-reveal-delay="1"
-                className="font-brand uppercase text-dourado text-4xl sm:text-5xl xl:text-6xl leading-[1.12] tracking-[0.14em]"
-              >
-                Elegância, Carácter
-                <br />
-                <span className="text-bege">e Tradição</span>
-              </h1>
-
-              {/* Filete de Ouro da Identidade */}
-              <span
-                data-reveal="zoom"
-                data-reveal-delay="2"
-                className="block w-20 h-px bg-dourado/60 my-6"
-                aria-hidden="true"
-              />
-
-              {/* Subtítulo da Garrafeira */}
-              <p
-                data-reveal
-                data-reveal-delay="3"
-                className="text-sm sm:text-base font-light text-[#E8DCC6]/85 leading-relaxed max-w-xl mb-8"
-              >
-                Vinhos de altitude cultivados nos solos graníticos do Sabugal a 750 metros. A nobreza e pureza da Beira Interior engarrafadas com rigor artesanal e enviadas para todo o mundo.
-              </p>
-
-              {/* CARTÃO INTERATIVO DO VINHO SELECIONADO NA HERO */}
-              <div
-                data-reveal
-                data-reveal-delay="4"
-                className="w-full max-w-xl p-5 sm:p-6 rounded-2xl glass-luxury border border-dourado/30 shadow-2xl shadow-black/60 mb-8 backdrop-blur-md transition-all duration-300"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-dourado/15">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full bg-bordo text-bege-light font-downey text-[10px] uppercase tracking-[0.2em] border border-dourado/40">
-                      {activeHero.badge || "Destaque da Adega"}
-                    </span>
-                    <span className="font-downey text-[11px] uppercase tracking-[0.2em] text-dourado">
-                      {activeHero.range} · {activeHero.year}
-                    </span>
+            {activeWine && (
+              <div data-reveal data-reveal-delay="4" className="mt-8 max-w-2xl p-5 sm:p-6 rounded-2xl glass-luxury border border-dourado/25 shadow-xl shadow-black/20">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-bege/10">
+                  <div className="flex items-center gap-2.5">
+                    {activeWine.badge && <span className="px-2.5 py-1 rounded-full bg-bordo text-bege text-[9px] uppercase font-bold tracking-[0.16em] border border-dourado/30">{activeWine.badge}</span>}
+                    <span className="font-downey text-[10px] uppercase tracking-[0.2em] text-dourado">{activeWine.range} · {activeWine.year}</span>
                   </div>
-                  <span className="font-brand text-2xl text-dourado tabular-nums">
-                    {formatMoney(activeHero.price)}
-                  </span>
+                  <span className="font-brand text-xl sm:text-2xl text-dourado">{formatMoney(activeWine.price)}</span>
                 </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h3 className="font-brand uppercase text-xl sm:text-2xl text-bege tracking-[0.05em]">
-                      {activeHero.title}
-                    </h3>
-                    <p className="font-downey text-xs text-dourado-soft/85 tracking-[0.1em] mt-0.5">
-                      {activeHero.grapes}
-                    </p>
-                    <p className="text-xs text-bege-muted font-light line-clamp-1 mt-1">
-                      {activeHero.desc}
-                    </p>
+                <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <h2 className="font-brand uppercase text-xl sm:text-2xl text-bege tracking-wide">{activeWine.title}</h2>
+                    <p className="font-downey text-[10px] uppercase tracking-[0.14em] text-bege-dark">{activeWine.grapes}</p>
+                    <p className="text-[11px] text-bege-muted mt-1 line-clamp-1">{activeWine.desc}</p>
                   </div>
-
-                  <div className="flex items-center gap-3 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => addToCart(activeHero)}
-                      className="px-4 py-2.5 rounded-xl bg-bordo hover:bg-bordo-light text-bege font-downey text-[11px] uppercase tracking-[0.2em] border border-dourado/40 transition cursor-pointer flex items-center gap-2 whitespace-nowrap shadow-lg shadow-black/40"
-                    >
-                      Comprar Garrafa
-                    </button>
-                    <Link
-                      to={`/vinhos/${activeHero.id}`}
-                      className="p-2.5 rounded-xl border border-dourado/30 hover:border-dourado text-dourado hover:text-bege transition cursor-pointer text-xs"
-                      title="Ver ficha técnica completa"
-                    >
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button type="button" onClick={() => addToCart(activeWine.id)} className="btn-brand btn-bordo !px-4 !py-3 !text-[10px] !tracking-[0.16em] whitespace-nowrap">Comprar garrafa</button>
+                    <Link to={`/vinhos/${activeWine.id}`} aria-label={`Ver ${activeWine.title}`} className="w-11 h-11 rounded-xl border border-dourado/35 text-dourado hover:bg-dourado/10 flex items-center justify-center transition-colors"><ArrowRight className="w-4 h-4" /></Link>
                   </div>
                 </div>
               </div>
+            )}
 
-              {/* Botões de Ação Globais */}
-              <div
-                data-reveal
-                data-reveal-delay="5"
-                className="flex flex-wrap items-center gap-5 sm:gap-7"
-              >
-                <Link to="/vinhos" className="btn-brand btn-bordo">
-                  Explorar toda a garrafeira
-                </Link>
-                <Link
-                  to="/sobre-nos"
-                  className="font-downey text-xs uppercase tracking-[0.24em] text-[#E8DCC6]/85 hover:text-dourado border-b border-dourado/40 hover:border-dourado pb-1 transition-colors"
-                >
-                  O Nosso Terroir & História
-                </Link>
-              </div>
-
-              {/* Selos de Altitude & Granito */}
-              <div className="mt-8 pt-6 border-t border-dourado/15 flex flex-wrap items-center gap-6 text-xs text-bege-muted/90 font-light">
-                <span className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-dourado" /> 750m Altitude Média
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-dourado" /> 100% Solos Graníticos
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-dourado" /> Carvalho Francês
-                </span>
-              </div>
+            <div data-reveal data-reveal-delay="5" className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-8">
+              <Link to="/vinhos" className="btn-brand btn-bordo">Descobrir os vinhos</Link>
+              <Link to="/sobre-nos" className="font-downey text-xs uppercase tracking-[0.24em] text-bege/85 hover:text-dourado border-b border-dourado/40 hover:border-dourado pb-1 transition-colors">A nossa história</Link>
             </div>
-
-            {/* COLUNA DIREITA: Palco da Garrafa Hero 3D + Seletor de Vinhos (Opção 1 + C) */}
-            <div className="lg:col-span-5 flex flex-col items-center justify-center relative mt-6 lg:mt-0">
-              
-              {/* Halo de Luz Dourada de Estúdio / Pedestal */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 sm:w-96 h-72 sm:h-96 rounded-full bg-dourado/15 blur-3xl pointer-events-none" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 sm:w-64 h-48 sm:h-64 rounded-full bg-bordo/25 blur-2xl pointer-events-none" />
-
-              {/* Palco da Garrafa com Badge Flutuante */}
-              <div className="relative z-10 flex flex-col items-center group">
-                
-                {/* Badge Flutuante de Medalha / Pontuação */}
-                {activeHero.awards && activeHero.awards.length > 0 && (
-                  <div className="absolute -top-3 sm:top-2 -right-2 sm:right-0 z-20 px-3 py-1.5 rounded-xl bg-vinicoa-noir/90 border border-dourado/50 text-dourado font-downey text-[10px] uppercase tracking-[0.2em] shadow-xl backdrop-blur-md">
-                    {activeHero.awards[0]}
-                  </div>
-                )}
-
-                {/* Garrafa em Destaque com Transição Fluida */}
-                <Link
-                  to={`/vinhos/${activeHero.id}`}
-                  className="relative block cursor-pointer transition-transform duration-500 hover:scale-105"
-                  title={`Ver detalhes de ${activeHero.title}`}
-                >
-                  <img
-                    key={activeHero.id}
-                    src={activeHero.image}
-                    alt={activeHero.title}
-                    className="h-[340px] sm:h-[420px] lg:h-[480px] w-auto object-contain rounded-2xl drop-shadow-[0_25px_35px_rgba(0,0,0,0.9)] transition-all duration-700 ease-out"
-                  />
-                  {/* Reflexo Granítico Suave no Chão */}
-                  <div className="w-44 sm:w-56 h-6 bg-black/60 blur-md rounded-full mx-auto mt-2" />
-                </Link>
-              </div>
-
-              {/* SELETOR INTERATIVO DE GARRAFAS (Opção C) */}
-              <div className="mt-6 z-20 flex flex-col items-center w-full max-w-sm">
-                <div className="flex items-center justify-center gap-2 sm:gap-3 p-1.5 rounded-full bg-vinicoa-noir/85 border border-dourado/30 backdrop-blur-md shadow-xl">
-                  {heroWines.map((wine, idx) => {
-                    const isSelected = idx === heroIdx;
-                    return (
-                      <button
-                        key={wine.id}
-                        type="button"
-                        onClick={() => setHeroIdx(idx)}
-                        className={`px-3 sm:px-4 py-1.5 rounded-full font-downey text-[10px] sm:text-[11px] uppercase tracking-[0.2em] transition-all duration-300 cursor-pointer ${
-                          isSelected
-                            ? "bg-dourado text-vinicoa-noir font-bold shadow-md shadow-dourado/20"
-                            : "text-bege/70 hover:text-dourado hover:bg-dourado/10"
-                        }`}
-                      >
-                        0{idx + 1} {wine.color}
-                      </button>
-                    );
-                  })}
-                </div>
-                <span className="font-downey text-[10px] uppercase tracking-[0.24em] text-bege-muted/70 mt-2.5">
-                  Toque para alternar o vinho em destaque
-                </span>
-              </div>
-
-            </div>
-
           </div>
+
+          {activeWine && (
+            <div data-reveal="fade" data-reveal-delay="2" className="lg:col-span-5 xl:col-span-5 flex flex-col items-center">
+              <div className="relative w-full max-w-md h-[360px] sm:h-[440px] flex items-center justify-center rounded-[2rem] border border-white/[0.06] bg-black/15">
+                <div className="absolute inset-8 rounded-full bg-dourado/[0.07] blur-3xl" />
+                {activeWine.awards?.[0] && <span className="absolute top-4 left-4 right-4 z-10 px-3 py-2 rounded-xl bg-[#0D0B0C]/90 border border-dourado/30 font-downey text-[9px] sm:text-[10px] uppercase tracking-[0.15em] text-dourado">{activeWine.awards[0]}</span>}
+                <img src={activeWine.image} alt={activeWine.title} className="relative z-[1] h-[290px] sm:h-[370px] max-w-[78%] object-contain drop-shadow-[0_28px_35px_rgba(0,0,0,0.65)]" />
+              </div>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2 rounded-full border border-dourado/25 bg-black/25 p-1.5">
+                {featuredWines.slice(0, 3).map((wine, idx) => (
+                  <button key={wine.id} type="button" onClick={() => setCurrentIdx(idx)} className={`px-4 py-2 rounded-full font-downey text-[9px] uppercase tracking-[0.18em] transition-colors ${idx === safeCurrentIdx ? "bg-dourado text-[#171312]" : "text-bege/65 hover:text-bege"}`}>
+                    {String(idx + 1).padStart(2, "0")} {wine.color}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 font-downey text-[9px] uppercase tracking-[0.2em] text-bege/40">Toque para alternar o vinho em destaque</p>
+            </div>
+          )}
         </div>
 
-        {/* Indicador de Scroll Suave para a Secção Seguinte */}
-        <button
-          type="button"
-          onClick={() => {
-            document.getElementById("kpis-section")?.scrollIntoView({ behavior: "smooth" });
-          }}
-          className="absolute bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 text-dourado/70 hover:text-dourado transition-colors cursor-pointer group"
-          aria-label="Deslizar para a garrafeira"
-        >
-          <span className="font-downey text-[9px] uppercase tracking-[0.35em] opacity-80 group-hover:opacity-100">
-            Descobrir Terroir
-          </span>
-          <span className="w-px h-7 bg-gradient-to-b from-dourado/80 to-transparent group-hover:h-9 transition-all duration-300" />
-        </button>
+        {/* Indicador de scroll discreto */}
+        <span
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 w-px h-12 bg-gradient-to-b from-dourado/70 to-transparent"
+          aria-hidden="true"
+        />
       </section>
 
       {/* PILARES DA GARRAFEIRA — bloco bege com tipografia bordô */}
