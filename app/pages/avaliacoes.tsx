@@ -77,6 +77,7 @@ export function Avaliacoes() {
     })(),
   }));
   const { total, media, counts } = ratingSummary(reviews);
+  const writtenReviews = reviews.filter((review) => review.texto.trim().length > 0);
 
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -103,7 +104,6 @@ export function Avaliacoes() {
 
   const generalTypes = [
     { value: "", label: "Avaliação geral da loja" },
-    { value: "enoturismo", label: "Enoturismo e visitas à adega" },
     { value: "entrega", label: "Envio e entrega" },
     { value: "atendimento", label: "Atendimento e apoio ao cliente" },
   ];
@@ -251,9 +251,11 @@ export function Avaliacoes() {
 
           {total === 0 ? (
             <p className="text-center text-base text-bege-dark">Ainda não há avaliações. Seja o primeiro a partilhar a sua.</p>
+          ) : writtenReviews.length === 0 ? (
+            <p className="text-center text-base text-bege-dark">Ainda não há avaliações escritas para ler.</p>
           ) : (
             <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {reviews.map((r, i) => (
+              {writtenReviews.map((r, i) => (
                 <li
                   key={r.id}
                   data-reveal
@@ -297,7 +299,7 @@ export function Avaliacoes() {
               <CheckCircle2 className="w-10 h-10 text-dourado mb-6" strokeWidth={1.25} />
               <h2 className="font-brand uppercase text-3xl text-bege tracking-[0.05em] mb-4">Obrigado pela avaliação</h2>
               <p className="text-base text-bege-dark leading-relaxed max-w-sm mb-8">
-                A sua opinião será publicada depois de revista pela nossa equipa.
+                A classificação será contabilizada depois de revista pela nossa equipa. Se escreveu um comentário, poderá ser publicado com o seu nome.
               </p>
               <button type="button" onClick={() => setSent(false)} className="btn-brand btn-bordo">
                 Escrever outra avaliação
@@ -487,12 +489,12 @@ export function Avaliacoes() {
 
                 <div>
                   <label htmlFor="av-titulo" className={labelClass}>
-                    Título *
+                    Título{texto.trim() ? " *" : ""}
                   </label>
                   <input
                     id="av-titulo"
                     type="text"
-                    required
+                    required={texto.trim().length > 0}
                     maxLength={80}
                     value={titulo}
                     onChange={(e) => setTitulo(e.target.value)}
@@ -503,17 +505,15 @@ export function Avaliacoes() {
 
                 <div>
                   <label htmlFor="av-texto" className={labelClass}>
-                    Avaliação *
+                    Avaliação <span className="normal-case tracking-normal text-bege-muted">(opcional)</span>
                   </label>
                   <textarea
                     id="av-texto"
                     rows={5}
-                    required
-                    minLength={20}
                     maxLength={1000}
                     value={texto}
                     onChange={(e) => setTexto(e.target.value)}
-                    placeholder="Conte-nos o que achou do vinho e da encomenda."
+                    placeholder="Se quiser, conte-nos o que achou do vinho e da encomenda. (mínimo 20 caracteres)"
                     className={`${inputClass} resize-y`}
                   />
                 </div>
@@ -541,8 +541,8 @@ export function Avaliacoes() {
                     className="mt-1 w-4 h-4 shrink-0 accent-[#6B0015] cursor-pointer"
                   />
                   <span className="text-sm text-bege-dark leading-relaxed">
-                    Autorizo a publicação desta avaliação com o meu nome. O e-mail serve apenas para validar a compra e
-                    não é publicado, de acordo com a Política de Privacidade (RGPD). *
+                    Autorizo a utilização da minha classificação para calcular a média pública e, se escrever um comentário,
+                    a publicação do comentário com o meu nome após revisão. O e-mail não será publicado, de acordo com a Política de Privacidade (RGPD). *
                   </span>
                 </label>
 

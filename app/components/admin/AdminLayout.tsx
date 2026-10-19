@@ -3,6 +3,7 @@ import { Form, Link, NavLink, useLocation } from "react-router";
 import {
   LayoutDashboard,
   Wine,
+  Inbox,
   Users,
   ExternalLink,
   Menu,
@@ -38,6 +39,13 @@ export function AdminLayout({ children, title, subtitle, action }: AdminLayoutPr
       icon: Wine,
       end: false,
       badge: wines.length,
+    },
+    {
+      to: "/admin/caixa-entrada",
+      label: "Caixa de entrada",
+      icon: Inbox,
+      end: false,
+      badge: null,
     },
     {
       to: "/admin/admins",

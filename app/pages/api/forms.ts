@@ -97,9 +97,13 @@ export async function action({ request }: Route.ActionArgs) {
   const body = normalizeText(payload.body);
   const rating = Number(payload.rating);
   const productSlug = normalizeText(payload.productSlug);
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5 || !title || title.length > 80 || body.length < 20 || body.length > 1000) {
+  if (
+    !Number.isInteger(rating) || rating < 1 || rating > 5 || title.length > 80 || body.length > 1000 ||
+    (body.length > 0 && body.length < 20) || (body.length > 0 && !title)
+  ) {
     return data({ error: "Confirma a classificação, o título e o texto da avaliação." }, { status: 400, headers });
   }
+  const savedTitle = title || "Avaliação por estrelas";
 
   let productId: string | null = null;
   if (productSlug) {
@@ -112,7 +116,7 @@ export async function action({ request }: Route.ActionArgs) {
     p_display_name: name,
     p_product_id: productId,
     p_rating: rating,
-    p_title: title,
+    p_title: savedTitle,
     p_body: body,
     p_email: email,
   });

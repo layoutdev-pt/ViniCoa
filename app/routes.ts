@@ -18,6 +18,7 @@ export default [
   route("admin", "pages/admin/protected-layout.tsx", [
     index("pages/admin/dashboard.tsx"),
     route("produtos", "pages/admin/products.tsx"),
+    route("caixa-entrada", "pages/admin/inbox.tsx"),
     route("admins", "pages/admin/admins.tsx"),
     route("api/products", "pages/api/products.ts"),
   ]),
