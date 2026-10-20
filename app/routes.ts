@@ -21,5 +21,6 @@ export default [
     route("caixa-entrada", "pages/admin/inbox.tsx"),
     route("admins", "pages/admin/admins.tsx"),
     route("api/products", "pages/api/products.ts"),
+    route("api/vendus-sync", "pages/api/vendus-sync.ts"),
   ]),
 ] satisfies RouteConfig;

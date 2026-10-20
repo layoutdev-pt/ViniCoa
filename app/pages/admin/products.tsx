@@ -10,6 +10,7 @@ import {
   X,
   AlertTriangle,
   ChevronDown,
+  RefreshCw,
 } from "lucide-react";
 import { AdminLayout } from "../../components/admin/AdminLayout";
 import { useAdmin } from "../../lib/admin-context";
@@ -108,6 +109,7 @@ export default function AdminProductsPage() {
   const [priceError, setPriceError] = useState<string | null>(null);
   const [primaryImageFile, setPrimaryImageFile] = useState<File | null>(null);
   const [secondaryImageFile, setSecondaryImageFile] = useState<File | null>(null);
+  const [syncingVendus, setSyncingVendus] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -345,19 +347,45 @@ export default function AdminProductsPage() {
     setOnlyFeatured(false);
   };
 
+  const syncVendusCatalog = async () => {
+    setSyncingVendus(true);
+    try {
+      const response = await fetch("/admin/api/vendus-sync", { method: "POST", headers: { Accept: "application/json" } });
+      const result = await response.json();
+      if (!response.ok || !result?.ok) throw new Error(result?.error || "Não foi possível sincronizar o Vendus.");
+      showToast(`Vendus sincronizado: ${result.imported} importado(s), ${result.updated} atualizado(s).`);
+      window.location.reload();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Não foi possível sincronizar o Vendus.");
+    } finally {
+      setSyncingVendus(false);
+    }
+  };
+
   return (
     <AdminLayout
       title="Produtos"
       subtitle="Adicionar, editar e filtrar produtos com opções de categoria, tipo, colheita e capacidade."
       action={
-        <button
-          type="button"
-          onClick={openAddModal}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-black hover:bg-white/90 text-xs font-medium font-sans transition cursor-pointer shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Novo Produto</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={syncVendusCatalog}
+            disabled={syncingVendus}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/15 text-white hover:bg-white/5 text-xs font-medium font-sans transition cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${syncingVendus ? "animate-spin" : ""}`} />
+            <span>{syncingVendus ? "A sincronizar…" : "Sincronizar Vendus"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={openAddModal}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-black hover:bg-white/90 text-xs font-medium font-sans transition cursor-pointer shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Novo Produto</span>
+          </button>
+        </div>
       }
     >
       {/* Toast Notification */}
