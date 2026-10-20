@@ -3,7 +3,7 @@
 @font-face {
   font-family: 'Berlin Sans';
   src: url('/fonts/berlinsans.ttf') format('truetype');
-  font-weight: normal;
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
@@ -11,7 +11,7 @@
 @font-face {
   font-family: 'Downey';
   src: url('/fonts/downey.ttf') format('truetype');
-  font-weight: normal;
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
@@ -36,15 +36,15 @@
   --color-vinicoa-charcoal: #171415;
   --color-vinicoa-card: #1F1A1B;
 
-  /* Manual de Identidade: Berlin Sans (principal) + Downey (secundária) */
+  /* Manual de Identidade: Berlin Sans (Títulos) + Downey (Descrições e Corpo) */
   --font-brand: 'Berlin Sans', 'Berlin Sans FB', sans-serif;
-  --font-downey: 'Downey', 'Lato', sans-serif;
+  --font-downey: 'Downey', sans-serif;
   --font-display: var(--font-brand);
   --font-editorial: var(--font-brand);
-  --font-sans: 'Lato', system-ui, sans-serif;
+  --font-sans: var(--font-downey);
 }
 
-/* As fontes da marca só têm um peso: evitar negrito/itálico sintético */
+/* Tipografia Estrita da Marca: evitar negrito/itálico sintético */
 .font-brand,
 .font-editorial,
 .font-display,
@@ -54,10 +54,33 @@
 }
 
 @layer base {
-  :where(h1, h2, h3, h4).font-brand {
-    font-weight: normal;
-    line-height: 1.05;
+  /* TÍTULOS: Apenas Berlin Sans em todo o site e em qualquer ocasião */
+  h1, h2, h3, h4, h5, h6,
+  .font-brand,
+  .font-editorial,
+  .font-display {
+    font-family: var(--font-brand) !important;
+    font-synthesis: none;
+    font-style: normal;
     letter-spacing: 0.03em;
+  }
+
+  h1 *, h2 *, h3 *, h4 *, h5 *, h6 *,
+  .font-brand * {
+    font-family: inherit;
+  }
+
+  /* DESCRIÇÕES, CORPO E TEXTOS: Apenas Downey em todo o site e em qualquer ocasião */
+  body, p, span, a, button, input, textarea, select, label, dd, dt, li, blockquote, figcaption,
+  .font-downey,
+  .font-sans {
+    font-family: var(--font-downey);
+    font-synthesis: none;
+    font-style: normal;
+  }
+
+  .font-downey {
+    font-family: var(--font-downey) !important;
   }
 }
 
@@ -116,7 +139,7 @@ html {
 body {
   background-color: var(--color-vinicoa-noir);
   color: var(--color-bege);
-  font-family: var(--font-sans);
+  font-family: var(--font-downey);
   overflow-x: hidden;
   transition: background-color 0.35s ease, color 0.35s ease;
 }

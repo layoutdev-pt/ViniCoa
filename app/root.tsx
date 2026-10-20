@@ -39,14 +39,9 @@ export default function App() {
         <script dangerouslySetInnerHTML={{ __html: REVEAL_BOOT_SCRIPT }} />
         <Meta />
         <Links />
-        {/* Fontes da marca: Berlin Sans e Downey são locais (app.css); Lato para texto corrido */}
+        {/* Fontes da marca: Berlin Sans para títulos e Downey para descrições */}
         <link rel="preload" href="/fonts/berlinsans.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&display=swap"
-          rel="stylesheet"
-        />
+        <link rel="preload" href="/fonts/downey.ttf" as="font" type="font/ttf" crossOrigin="anonymous" />
       </head>
       <body className="relative antialiased selection:bg-bordo selection:text-dourado min-h-screen flex flex-col justify-between">
         <AdminProvider>
